@@ -40,9 +40,9 @@ class SharePointUsageFetcher:
             raise Exception(f"Error fetching SharePoint usage details: {e}")
 
 async def main():
-    tenant_id = '42fd9015-de4d-4223-a368-baeacab48927'
-    client_id = '2bc1c9b9-d0ad-4ff1-ac90-f5f54f942efb'
-    client_secret = 'o5B8Q~XnkYM_BFpZ3anY~5lzrSiVqqGW3P_60br1'
+    tenant_id = ''
+    client_id = ''
+    client_secret = ''
     period = "D30"  # Example: "D30" for the last 30 days
 
     fetcher = SharePointUsageFetcher(client_id, client_secret, tenant_id)
