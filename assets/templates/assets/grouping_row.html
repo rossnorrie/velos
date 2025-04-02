@@ -12,26 +12,26 @@
 {% unique_id as row_id %}
 <tr id="row-{{ row_id }}"
     class="group-row {% if parent_path %}child-of-{{ parent_path }} hidden{% endif %}"
-    onclick="toggleGroup(event, '{{ row_id }}', '.child-of-{{ row_id }}')">
+    {% if group.sub_groups %}onclick="toggleGroup(event, '{{ row_id }}', '.child-of-{{ row_id }}')" {% endif %}>
 
   {% for h in header_list %}
     {% if forloop.counter0 == level %}
-      <td class="px-4 py-2" style="padding-left: {{ level|add:"1" }}em;">
+      <td data-header="{{ h }}" class="px-4 py-2 align-middle" style="padding-left: {{ level|add:"1" }}em;">
         {% if group.sub_groups %}
           <i id="icon-{{ row_id }}" class="fas fa-chevron-right text-xs transition-transform duration-200 mr-1"></i>
         {% endif %}
-        
+
         <i class="fas {{ group.value|file_icon }} mr-1"
            {% if level == 0 and group.colour %}style="color: {{ group.colour }};"{% endif %}></i>
 
-        {{ group.value|default:"(Not Available)" }}
+        <span>{{ group.value|default:"(Not Available)" }}</span>
       </td>
     {% else %}
       <td></td>
     {% endif %}
   {% endfor %}
 
-  <td class="px-4 py-2">{{ group.count|default:"(Not Available)" }}</td>
+  <td class="px-4 py-2 text-center">{{ group.count|default:"(Not Available)" }}</td>
 
   <td class="px-4 py-2 text-sm text-gray-800">
     <div class="relative bg-gray-200 rounded-full h-2.5 w-24">

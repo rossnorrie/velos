@@ -14,6 +14,8 @@ import pprint
 from django.contrib.auth.decorators import login_required
 from collections import defaultdict
 from django.shortcuts import render
+from django.utils.safestring import mark_safe
+
 
 
 def to_dict(obj):
@@ -180,8 +182,12 @@ def asset_ms_graph_asset_list(request):
             grouped_data = group_devices_recursively(devices, group_by_properties_list)
             grouped_data = add_icon_and_colour(grouped_data)
 
+            # ✅ Fix: Proper JSON serialization for safe JavaScript embedding
+            groups_json = mark_safe(json.dumps(grouped_data))
+
             return render(request, 'assets/generic_report.html', {
-                'groups': grouped_data,
+                'groups': grouped_data,  # used in template rendering
+                'groups_json': mark_safe(json.dumps(grouped_data)),  # used for JS
                 'header_list': group_by_properties_list,
             })
         else:

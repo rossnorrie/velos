@@ -1,0 +1,254 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block content %}
+
+<!-- Toolbar Section -->
+<!-- Toolbar (Always Visible) -->
+<div id="mergedToolbar" class="w-full flex items-center justify-end space-x-3 bg-gray-100 p-2 rounded-t shadow mb-0 border border-b-0 border-gray-200">
+  <!-- Chart Type Selector -->
+  <div class="flex items-center space-x-1">
+    <label for="chartTypeSelect" class="sr-only">Chart Type</label>
+    <i class="fas fa-chart-bar text-xl text-gray-700"></i>
+    <select id="chartTypeSelect" class="border border-gray-300 rounded px-2 py-1" onchange="changeChartType()">
+      <option value="bar" selected>Bar</option>
+      <option value="line">Line</option>
+      <option value="pie">Pie</option>
+      <option value="doughnut">Doughnut</option>
+      <option value="radar">Radar</option>
+      <option value="polarArea">Polar Area</option>
+    </select>
+  </div>
+
+  <!-- Separator -->
+  <div class="border-l h-5 border-gray-300 mx-2"></div>
+  <!-- Action Buttons -->
+
+
+  <a href="javascript:void(0)" onclick="expandAllNodes()" title="Expand All" class="text-gray-700 hover:text-gray-900">
+    <i class="fas fa-expand text-xl"></i>
+  </a>
+  <a href="javascript:void(0)" onclick="collapseAllNodes()" title="Collapse All" class="text-gray-700 hover:text-gray-900">
+    <i class="fas fa-compress text-xl"></i>
+  </a>
+
+    <!-- Separator -->
+    <div class="border-l h-5 border-gray-300 mx-2"></div>
+
+
+
+  <a href="javascript:void(0)" onclick="downloadCSV()" title="Export CSV" class="text-gray-700 hover:text-gray-900">
+    <i class="fas fa-file-csv text-xl"></i>
+  </a>
+  <a href="javascript:void(0)" onclick="downloadJSON()" title="Export JSON" class="text-gray-700 hover:text-gray-900">
+    <i class="fas fa-file-code text-xl"></i>
+  </a>
+  <a href="javascript:void(0)" onclick="printReport()" title="Print Report" class="text-gray-700 hover:text-gray-900">
+    <i class="fas fa-print text-xl"></i>
+  </a>
+
+    <!-- Separator -->
+    <div class="border-l h-5 border-gray-300 mx-2"></div>
+
+
+    
+  <!-- Expand/Collapse Filters -->
+  <a href="javascript:void(0)" onclick="toggleFilterPanel()" title="Show/Hide Filters" class="text-gray-700 hover:text-gray-900">
+    <i class="fas fa-filter text-xl"></i>
+  </a>
+</div>
+
+<!-- Filter Panel (Initially Hidden) -->
+<div id="filterPanel" class="hidden bg-gray-50 p-4 rounded-b shadow border border-t-0 border-gray-200 mb-6">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Date Range</label>
+      <input type="date" class="w-full border border-gray-300 rounded px-2 py-1 mt-1" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700">Category</label>
+      <select class="w-full border border-gray-300 rounded px-2 py-1 mt-1">
+        <option value="">All</option>
+        <option value="x">Category X</option>
+        <option value="y">Category Y</option>
+      </select>
+    </div>
+    <!-- Add more filters as needed -->
+  </div>
+</div>
+
+
+
+<div class="w-full py-6">
+  <h2 class="text-3xl font-bold mb-6 flex items-center">
+    <i class="fas fa-chart-bar text-4xl mr-3"></i>
+    Generic Grouping Report
+  </h2>
+  <h3 class="w-[70%] text-sm mb-6">
+    This report shows a nested grouping structure. Each row displays the <strong>Value</strong>, 
+    <strong>Count</strong>, and <strong>Percentage</strong>. Each node shows an icon, and top-level nodes have chart colours applied.
+  </h3>
+
+  <!-- Chart Section -->
+  <div id="chartSection" class="relative mb-6">
+    <div class="w-[80%] h-[75vh] mx-auto">
+      <canvas id="groupingChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Report Table -->
+  <div id="reportContainer">
+    <div class="relative">
+      <div class="overflow-x-auto border border-gray-200 rounded-lg pt-6">
+        <table id="groupingTable" class="min-w-full bg-white">
+          <thead>
+            <tr>
+              {% for header in header_list %}
+                <th class="py-2 px-4 text-left">{{ header|capfirst }}</th>
+              {% endfor %}
+              <th class="py-2 px-4 text-left">Count</th>
+              <th class="py-2 px-4 text-left">Percentage</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for group in groups %}
+              {% include "assets/grouping_row.html" with group=group level=0 parent_path="" header_list=header_list %}
+            {% endfor %}
+          </tbody>          
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+    function toggleFilterPanel() {
+      const panel = document.getElementById("filterPanel");
+      panel.classList.toggle("hidden");
+    }
+
+
+    function toggleGroup(event, groupId, childSelector) {
+        event.stopPropagation();
+        const children = document.querySelectorAll(childSelector);
+        const icon = document.getElementById("icon-" + groupId);
+        let collapsing = false;
+        children.forEach(child => {
+          if (!child.classList.contains("hidden")) collapsing = true;
+        });
+        if (collapsing) {
+          children.forEach(child => child.classList.add("hidden"));
+          if (icon) icon.classList.remove("rotate-90");
+        } else {
+          children.forEach(child => child.classList.remove("hidden"));
+          if (icon) icon.classList.add("rotate-90");
+        }
+      }
+
+  function expandAllNodes() {
+    document.querySelectorAll("[class*='child-of-']").forEach(el => el.classList.remove("hidden"));
+    document.querySelectorAll("[id^='icon-']").forEach(icon => icon.classList.add("rotate-90"));
+  }
+
+  function collapseAllNodes() {
+    document.querySelectorAll("[class*='child-of-']").forEach(el => el.classList.add("hidden"));
+    document.querySelectorAll("[id^='icon-']").forEach(icon => icon.classList.remove("rotate-90"));
+  }
+
+  function downloadCSV() {
+    const rows = document.querySelectorAll("#groupingTable tr");
+    let csv = [];
+    rows.forEach(row => {
+      const cells = Array.from(row.querySelectorAll("td, th")).map(cell => '"' + cell.textContent.trim() + '"');
+      if (cells.length) csv.push(cells.join(","));
+    });
+    const blob = new Blob([csv.join("\n")], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "grouping_report.csv";
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  function downloadJSON() {
+    const data = {{ groups|safe }};
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "grouping_report.json";
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  function printReport() {
+    const reportContent = document.getElementById("reportContainer").cloneNode(true);
+    const printWindow = window.open("", "Print Report", "height=600,width=800");
+    printWindow.document.write("<html><head><title>Print Report</title><style>");
+    printWindow.document.write("body { font-family: sans-serif; margin: 20px; }");
+    printWindow.document.write("table { width: 100%; border-collapse: collapse; }");
+    printWindow.document.write("th, td { border: 1px solid #ddd; padding: 8px; }");
+    printWindow.document.write("th { background: #333; color: #fff; }");
+    printWindow.document.write("</style></head><body>");
+    printWindow.document.body.appendChild(reportContent);
+    printWindow.document.write("</body></html>");
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  }
+
+  let groupingChart;
+  function initChart(chartType = "bar") {
+    const ctx = document.getElementById("groupingChart").getContext("2d");
+    const groups = {{ groups|safe }};
+    const labels = groups.map(g => g.value || "(Not Available)");
+    const counts = groups.map(g => g.count || 0);
+    const defaultColors = ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf'];
+    const colors = groups.map((g, i) => g.colour ? g.colour : defaultColors[i % defaultColors.length]);
+
+    groupingChart = new Chart(ctx, {
+      type: chartType,
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "Count",
+          data: counts,
+          backgroundColor: colors
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "top" },
+          title: { display: true, text: "Grouping Distribution" }
+        },
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: "Count" } }
+        }
+      }
+    });
+  }
+
+  function changeChartType() {
+    const newType = document.getElementById("chartTypeSelect").value;
+    if (groupingChart) groupingChart.destroy();
+    initChart(newType);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    initChart();
+        // Ensure all children are hidden by default
+        collapseAllNodes();
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .rotate-90 { transform: rotate(90deg); }
+  .hidden { display: none !important; }
+</style>
+
+{% endblock %}
