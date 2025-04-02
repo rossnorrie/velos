@@ -1,0 +1,240 @@
+{% extends "dashboard/base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+
+<div class="flex w-full flex-col items-start ">
+  <div class="group flex gap-x-6">
+    <div class="relative">
+      <div class="absolute left-1/2 top-0 h-full w-0.5 -translate-x-1/2 bg-slate-600"></div><span class="relative z-10 grid h-3 w-3 place-items-center rounded-full bg-slate-600 text-slate-800"></span>
+    </div>
+    <div class="-translate-y-1.5 pb-8 text-slate-600">
+      <p class="font-sans text-base font-bold text-slate-800 antialiased dark:text-black">2023</p><small class="mt-2 font-sans text-sm text-slate-600 antialiased">The key to more success is to have a lot of pillows. Put it this way, it took me twenty five years to get these plants, twenty five years of blood sweat and tears, and I&#x27;m never giving up, I&#x27;m just getting started. I&#x27;m up to something. Fan luv.</small>
+    </div>
+  </div>
+  <div class="group flex gap-x-6">
+    <div class="relative">
+      <div class="absolute left-1/2 top-0 h-full w-0.5 -translate-x-1/2 bg-slate-600"></div><span class="relative z-10 grid h-3 w-3 place-items-center rounded-full bg-slate-600 text-slate-800"></span>
+    </div>
+    <div class="-translate-y-1.5 pb-8 text-slate-600">
+      <p class="font-sans text-base font-bold text-slate-800 antialiased dark:text-black">2024</p><small class="mt-2 font-sans text-sm text-slate-600 antialiased">The key to more success is to have a lot of pillows. Put it this way, it took me twenty five years to get these plants, twenty five years of blood sweat and tears, and I&#x27;m never giving up, I&#x27;m just getting started. I&#x27;m up to something. Fan luv.</small>
+    </div>
+  </div>
+  <div class="group flex gap-x-6">
+    <div class="relative"><span class="relative z-10 grid h-3 w-3 place-items-center rounded-full bg-slate-600 text-slate-800"></span></div>
+    <div class="-translate-y-1.5 pb-8 text-slate-600">
+      <p class="font-sans text-base font-bold text-slate-800 antialiased dark:text-black">2025</p><small class="mt-2 font-sans text-sm text-slate-600 antialiased">The key to more success is to have a lot of pillows. Put it this way, it took me twenty five years to get these plants, twenty five years of blood sweat and tears, and I&#x27;m never giving up, I&#x27;m just getting started. I&#x27;m up to something. Fan luv.</small>
+    </div>
+  </div>
+</div>
+
+  <!-- KPI Row -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div class="bg-white text-gray-900 border border-gray-200 p-6 rounded-lg shadow hover:shadow-lg transition">
+      <div class="text-3xl font-extrabold mb-2">12.64M</div>
+      <div class="text-sm font-medium text-gray-600">Sum of Sales</div>
+    </div>
+    <div class="bg-white text-gray-900 border border-gray-200 p-6 rounded-lg shadow hover:shadow-lg transition">
+      <div class="text-3xl font-extrabold mb-2">178K</div>
+      <div class="text-sm font-medium text-gray-600">Number of Orders</div>
+    </div>
+    <div class="bg-white text-gray-900 border border-gray-200 p-6 rounded-lg shadow hover:shadow-lg transition">
+      <div class="text-3xl font-extrabold mb-2">4.0</div>
+      <div class="text-sm font-medium text-gray-600">Avg Delivery Days</div>
+    </div>
+  </div>
+
+  <!-- Main Dashboard Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <!-- Sales by Segment (Pie Chart) -->
+    <div class="bg-white text-gray-900 border border-gray-200 p-6 rounded-lg shadow">
+      <div class="font-semibold text-lg mb-4">Sales by Segment</div>
+      <div class="bg-gray-50 h-56 rounded-lg flex items-center justify-center border border-gray-100">
+        <canvas id="segmentChart" class="w-full h-full"></canvas>
+      </div>
+    </div>
+
+    <!-- Sales by Market (Doughnut Chart) -->
+    <div class="bg-white text-gray-900 border border-gray-200 p-6 rounded-lg shadow">
+      <div class="font-semibold text-lg mb-4">Sales by Market</div>
+      <div class="bg-gray-50 h-56 rounded-lg flex items-center justify-center border border-gray-100">
+        <canvas id="marketChart" class="w-full h-full"></canvas>
+      </div>
+    </div>
+
+    <!-- Sum of Sales by Region (Line Chart) -->
+    <div class="bg-white text-gray-900 border border-gray-200 p-6 rounded-lg shadow lg:col-span-2">
+      <div class="font-semibold text-lg mb-4">Sum of Sales by Region</div>
+      <div class="bg-gray-50 h-56 rounded-lg flex items-center justify-center border border-gray-100">
+        <canvas id="regionChart" class="w-full h-full"></canvas>
+      </div>
+    </div>
+
+    <!-- Top 10 Customers by Profit (Bar Chart) -->
+    <div class="bg-white text-gray-900 border border-gray-200 p-6 rounded-lg shadow">
+      <div class="font-semibold text-lg mb-4">Top 10 Customers by Profit</div>
+      <div class="bg-gray-50 h-56 rounded-lg flex items-center justify-center border border-gray-100">
+        <canvas id="customersChart" class="w-full h-full"></canvas>
+      </div>
+    </div>
+
+    <!-- Top 5 Profit Products (Line Chart) -->
+    <div class="bg-white text-gray-900 border border-gray-200 p-6 rounded-lg shadow">
+      <div class="font-semibold text-lg mb-4">Top 5 Profit Products</div>
+      <div class="bg-gray-50 h-56 rounded-lg flex items-center justify-center border border-gray-100">
+        <canvas id="profitChart" class="w-full h-full"></canvas>
+      </div>
+    </div>
+
+    <!-- Top 5 Loss Products (Bar Chart) -->
+    <div class="bg-white text-gray-900 border border-gray-200 p-6 rounded-lg shadow">
+      <div class="font-semibold text-lg mb-4">Top 5 Loss Products</div>
+      <div class="bg-gray-50 h-56 rounded-lg flex items-center justify-center border border-gray-100">
+        <canvas id="lossChart" class="w-full h-full"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Load Chart.js from CDN and initialize charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Common bounce animation for all charts
+  const bounceAnimation = {
+    duration: 1500,         
+    easing: 'easeOutBounce'
+  };
+
+  // 1) Pie Chart: Sales by Segment
+  const segmentCtx = document.getElementById('segmentChart').getContext('2d');
+  new Chart(segmentCtx, {
+    type: 'pie',
+    data: {
+      labels: ['Consumer', 'Corporate', 'Home Office'],
+      datasets: [{
+        data: [45, 35, 20],
+        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: bounceAnimation
+    }
+  });
+
+  // 2) Doughnut Chart: Sales by Market
+  const marketCtx = document.getElementById('marketChart').getContext('2d');
+  new Chart(marketCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['NA', 'EMEA', 'APAC', 'LATAM'],
+      datasets: [{
+        data: [40, 30, 20, 10],
+        backgroundColor: ['#4BC0C0', '#FF9F40', '#9966FF', '#FF6384']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: bounceAnimation
+    }
+  });
+
+  // 3) Line Chart: Sum of Sales by Region
+  const regionCtx = document.getElementById('regionChart').getContext('2d');
+  new Chart(regionCtx, {
+    type: 'line',
+    data: {
+      labels: ['America', 'Europe', 'Asia', 'Australia'],
+      datasets: [{
+        label: 'Sales ($)',
+        data: [5000, 4000, 3000, 2000],
+        fill: false,
+        borderColor: '#36A2EB',
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: '#4B5563' } },
+        y: { ticks: { color: '#4B5563' } }
+      },
+      animation: bounceAnimation
+    }
+  });
+
+  // 4) Bar Chart: Top 10 Customers by Profit
+  const customersCtx = document.getElementById('customersChart').getContext('2d');
+  new Chart(customersCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Tunaah', 'Biffco', 'GeneCo', 'Aperture', 'Wayne Ent.', 'Stark Ind.', 'Oscorp', 'Umbrella', 'Cyberdyne', 'Initech'],
+      datasets: [{
+        label: 'Profit ($)',
+        data: [1200, 900, 850, 800, 780, 760, 700, 650, 600, 550],
+        backgroundColor: '#FFCE56'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: '#4B5563' } },
+        y: { ticks: { color: '#4B5563' } }
+      },
+      animation: bounceAnimation
+    }
+  });
+
+  // 5) Line Chart: Top 5 Profit Products
+  const profitCtx = document.getElementById('profitChart').getContext('2d');
+  new Chart(profitCtx, {
+    type: 'line',
+    data: {
+      labels: ['Motorola', 'Cisco', 'Apple', 'Lenovo', 'Dell'],
+      datasets: [{
+        label: 'Profit ($)',
+        data: [2000, 1800, 1600, 1400, 1300],
+        fill: false,
+        borderColor: '#4BC0C0',
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: '#4B5563' } },
+        y: { ticks: { color: '#4B5563' } }
+      },
+      animation: bounceAnimation
+    }
+  });
+
+  // 6) Bar Chart: Top 5 Loss Products
+  const lossCtx = document.getElementById('lossChart').getContext('2d');
+  new Chart(lossCtx, {
+    type: 'bar',
+    data: {
+      labels: ['Paper', 'Ink Cartridges', 'Binder Clips', 'Staples', 'Lanyards'],
+      datasets: [{
+        label: 'Loss ($)',
+        data: [600, 550, 500, 400, 300],
+        backgroundColor: '#FF6384'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { color: '#4B5563' } },
+        y: { ticks: { color: '#4B5563' } }
+      },
+      animation: bounceAnimation
+    }
+  });
+</script>
+{% endblock %}

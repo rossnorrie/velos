@@ -1,0 +1,145 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Free -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+  <!-- Optional CSS to hide text when collapsed -->
+  <style>
+    .collapsed .sidebar-text {
+      display: none; /* Hide text in collapsed mode */
+    }
+  </style>
+</head>
+<body class="bg-gray-100">
+  <div class="flex h-screen">
+    <!-- Sidebar -->
+    <div
+      id="sidebar"
+      class="w-64 bg-gray-900 text-white flex flex-col transition-all duration-300"
+    >
+      <!-- Top Section with Logo + Collapse Button -->
+      <div class="flex items-center justify-between p-4 border-b border-gray-700">
+        <!-- Logo -->
+        <img
+          src="{% static 'images/velos.png' %}"
+          alt="Logo"
+          class="h-8"
+        />
+        <!-- Toggle Sidebar Button -->
+        <button
+          id="toggleSidebar"
+          class="text-white hover:text-gray-300 focus:outline-none"
+        >
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="flex-grow">
+        <ul class="p-2">
+          <li class="py-2 px-4 hover:bg-gray-700">
+            <a href="{% url 'home' %}" class="flex items-center">
+              <i class="fas fa-house-user w-5 h-5"></i>
+              <span class="ml-2 sidebar-text">Home</span>
+            </a>
+          </li>
+          <li class="py-2 px-4 hover:bg-gray-700">
+            <a href="{% url 'asset' %}" class="flex items-center">
+              <i class="fas fa-boxes w-5 h-5"></i>
+              <span class="ml-2 sidebar-text">Asset</span>
+            </a>
+          </li>
+          <li class="py-2 px-4 hover:bg-gray-700">
+            <a href="{% url 'asset-list' %}" class="flex items-center">
+              <i class="fas fa-list w-5 h-5"></i>
+              <span class="ml-2 sidebar-text">Asset List</span>
+            </a>
+          </li>
+          <li class="py-2 px-4 hover:bg-gray-700">
+            <a href="{% url 'asset_ms_graph_asset_list' %}" class="flex items-center">
+              <i class="fas fa-chart-bar w-5 h-5"></i>
+              <span class="ml-2 sidebar-text">MS Intune User Data</span>
+            </a>
+          </li>          
+          <li class="py-2 px-4 hover:bg-gray-700">
+            <a href="{% url 'lease' %}" class="flex items-center">
+              <i class="fas fa-file-contract w-5 h-5"></i>
+              <span class="ml-2 sidebar-text">Lease</span>
+            </a>
+          </li>
+          <li class="py-2 px-4 hover:bg-gray-700">
+            <a href="{% url 'rental' %}" class="flex items-center">
+              <i class="fas fa-door-open w-5 h-5"></i>
+              <span class="ml-2 sidebar-text">Rental</span>
+            </a>
+          </li>
+          <li class="py-2 px-4 hover:bg-gray-700">
+            <a href="{% url 'reports' %}" class="flex items-center">
+              <i class="fas fa-chart-bar w-5 h-5"></i>
+              <span class="ml-2 sidebar-text">Reports</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Bottom Section -->
+      <div class="p-4 text-sm border-t border-gray-700 flex items-center">
+        <i class="fas fa-tasks w-5 h-5"></i>
+        <span class="ml-2 sidebar-text">Settings...</span>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 p-6">
+      <!-- Top Bar (No toggle button here) -->
+      <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold">....</h1>
+        <!-- Profile Badge -->
+        <div class="flex items-center">
+          <img
+            class="w-10 h-10 rounded-full border border-white"
+            src="{% static 'images/person.jpg' %}"
+            alt="Profile Picture"
+          />
+          <div class="ml-4">
+            <h2 class="text-m font-semibold">Ross</h2>
+            <p class="text-gray-500 text-sm">Developer</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Block -->
+      {% block content %}
+      <p class="text-gray-600">Your main content goes here.</p>
+      {% endblock %}
+    </div>
+  </div>
+
+  <!-- Toggle Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const toggleBtn = document.getElementById('toggleSidebar');
+      const sidebar = document.getElementById('sidebar');
+
+      toggleBtn.addEventListener('click', () => {
+        // Toggle the width classes
+        sidebar.classList.toggle('w-64');
+        sidebar.classList.toggle('w-16');
+        // Toggle 'collapsed' for optional text-hiding
+        sidebar.classList.toggle('collapsed');
+      });
+    });
+  </script>
+</body>
+</html>

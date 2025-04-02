@@ -1,0 +1,131 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Free -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body class="bg-gray-100">
+  <div class="flex h-screen">
+    <!-- Sidebar -->
+    <div class="w-64 bg-gray-900 text-white flex flex-col">
+      <div class="p-4 text-lg font-semibold">SESSIONS</div>
+      <nav class="flex-grow">
+        <ul class="p-2">
+          <li class="py-2 px-4 hover:bg-gray-700">
+            <a href="{% url 'home' %}" class="flex items-center">
+              <i class="fas fa-house-user w-5 h-5 mr-2"></i>
+              Home
+            </a>
+          </li>
+          <li class="py-2 px-4 hover:bg-gray-700">
+            <a href="{% url 'asset' %}" class="flex items-center">
+              <i class="fas fa-boxes w-5 h-5 mr-2"></i>
+              Asset
+            </a>
+          </li>
+          <li class="py-2 px-4 hover:bg-gray-700">
+            <a href="{% url 'asset-list' %}" class="flex items-center">
+              <i class="fas fa-boxes w-5 h-5 mr-2"></i>
+              Asset List
+            </a>
+          </li>
+          <li class="py-2 px-4 hover:bg-gray-700">
+            <a href="{% url 'lease' %}" class="flex items-center">
+              <i class="fas fa-file-contract w-5 h-5 mr-2"></i>
+              Lease
+            </a>
+          </li>
+          <li class="py-2 px-4 hover:bg-gray-700">
+            <a href="{% url 'rental' %}" class="flex items-center">
+              <i class="fas fa-door-open w-5 h-5 mr-2"></i>
+              Rental
+            </a>
+          </li>
+          <li class="py-2 px-4 hover:bg-gray-700">
+            <a href="{% url 'reports' %}" class="flex items-center">
+              <i class="fas fa-chart-bar w-5 h-5 mr-2"></i>
+              Reports
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <div class="p-4 text-sm border-t border-gray-700">
+        Free (Special trial)
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 p-6">
+      <!-- Top Bar with Title and Profile Badge -->
+      <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold">New Event</h1>
+        <!-- Updated Profile Badge -->
+        <div class="flex items-center">
+          <img
+            class="w-12 h-12 rounded-full border border-white"
+            src="{% static 'images/person.jpg' %}"
+            alt="Profile Picture"
+          />
+          <div class="ml-4">
+            <h2 class="text-xl font-semibold">Ross</h2>
+            <p class="text-gray-500 text-sm">Developer</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registration Form Section -->
+      <div class="bg-white shadow-md p-6 mt-4 rounded-lg">
+        <h2 class="text-xl font-semibold mb-4">Registration</h2>
+        <label class="flex items-center">
+          <input type="checkbox" checked class="mr-2">
+          Enable registration form
+        </label>
+        <div class="mt-4">
+          <label class="block text-sm font-medium">Form Name</label>
+          <input type="text" class="w-full border rounded p-2 mt-1" value="New Event Registration Form">
+        </div>
+
+        <div class="mt-4">
+          <label class="block text-sm font-medium">Form Description</label>
+          <textarea class="w-full border rounded p-2 mt-1" placeholder="Describe your event"></textarea>
+        </div>
+
+        <!-- Form Fields Table -->
+        <div class="mt-4">
+          <h3 class="text-lg font-medium">Form Fields</h3>
+          <table class="w-full border mt-2">
+            <thead>
+              <tr class="bg-gray-200">
+                <th class="p-2">Field</th>
+                <th class="p-2">Required</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-t">
+                <td class="p-2">Name</td>
+                <td class="p-2"><input type="checkbox" checked></td>
+              </tr>
+              <tr class="border-t">
+                <td class="p-2">Email</td>
+                <td class="p-2"><input type="checkbox" checked></td>
+              </tr>
+              <tr class="border-t">
+                <td class="p-2">City</td>
+                <td class="p-2"><input type="checkbox"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <button class="mt-4 bg-blue-500 text-white px-4 py-2 rounded">+ Add Field</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

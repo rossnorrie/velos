@@ -1,0 +1,25 @@
+{% extends "dashboard/base.html" %}
+
+{% block content %}
+<h2>Asset List</h2>
+<table border="1">
+    <tr>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Purchase Date</th>
+        <th>Status</th>
+    </tr>
+    {% for asset in assets %}
+    <tr>
+        <td>{{ asset.name }}</td>
+        <td>{{ asset.category }}</td>
+        <td>{{ asset.purchase_date }}</td>
+        <td>{{ asset.lease_status|yesno:"Leased,Available" }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="4">No assets available</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

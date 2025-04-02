@@ -1,0 +1,485 @@
+{% extends "dashboard/base.html" %}
+{% load file_icon %}
+{% load my_filters %}
+
+{% block content %}
+  <!-- Toolbar Section (full width, right aligned) -->
+  <div id="mergedToolbar" class="w-full flex flex-wrap items-center justify-end space-x-3 bg-gray-100 p-2 rounded shadow mb-6">
+    <!-- Chart Type Selector with FontAwesome Icon -->
+    <div class="flex items-center space-x-1">
+      <label for="chartTypeSelect" class="sr-only">Chart Type</label>
+      <i class="fas fa-chart-bar text-xl text-gray-700"></i>
+      <select id="chartTypeSelect" class="border border-gray-300 rounded px-2 py-1" onchange="changeChartType()">
+        <option value="bar" selected>Bar</option>
+        <option value="line">Line</option>
+        <option value="pie">Pie</option>
+        <option value="doughnut">Doughnut</option>
+        <option value="radar">Radar</option>
+        <option value="polarArea">Polar Area</option>
+        <option value="bubble">Bubble</option>
+        <option value="scatter">Scatter</option>
+      </select>
+    </div>
+    <!-- Other Icons -->
+    <a href="javascript:void(0)" onclick="expandAllNodes()" title="Expand All" class="text-gray-700 hover:text-gray-900">
+      <i class="fas fa-expand text-xl"></i>
+    </a>
+    <a href="javascript:void(0)" onclick="collapseAllNodes()" title="Collapse All" class="text-gray-700 hover:text-gray-900">
+      <i class="fas fa-compress text-xl"></i>
+    </a>
+    <a href="javascript:void(0)" onclick="downloadCSV()" title="Export CSV" class="text-gray-700 hover:text-gray-900">
+      <i class="fas fa-file-csv text-xl"></i>
+    </a>
+    <a href="javascript:void(0)" onclick="downloadJSON()" title="Export JSON" class="text-gray-700 hover:text-gray-900">
+      <i class="fas fa-file-code text-xl"></i>
+    </a>
+    <a href="javascript:void(0)" onclick="printReport()" title="Print Report" class="text-gray-700 hover:text-gray-900">
+      <i class="fas fa-print text-xl"></i>
+    </a>
+  </div>
+
+<div class="w-full py-6">
+  <h2 class="text-3xl font-bold mb-6 text-left flex items-center">
+    <i class="fas fa-chart-bar text-4xl mr-3"></i>
+    Similarity Report
+  </h2>
+  <h3 class="w-[70%] text-sm mb-6 text-left flex items-center">
+    A Document Similarity Report is a powerful tool used to assess and compare the content of multiple documents. It measures how closely related documents are by analyzing elements such as text, metadata, and even visual content. This report is invaluable for detecting plagiarism, identifying duplicate or redundant information, and ensuring consistency across document revisions. By presenting clear, visual metrics through charts and tables, the report helps users quickly pinpoint similarities and differences, making it easier to streamline content review processes, maintain quality control, and uphold data integrity in academic, legal, or corporate settings.
+  </h3>
+
+  <!-- Chart Section -->
+  <div id="chartSection" class="relative mb-6">
+    <div class="w-[80%] h-[75vh] mx-auto">
+      <canvas id="similarityChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Report Container for Table (no separate toolbar here) -->
+  <div id="reportContainer">
+    <div class="relative">
+      <div class="overflow-x-auto border border-gray-200 rounded-lg pt-6">
+        <table id="similarityTable" class="min-w-full bg-white">
+          <thead class="bg-gradient-to-r from-gray-900 to-blue-400 text-white uppercase text-sm">
+            <tr>
+              <th class="py-2 px-4 text-left">Source</th>
+              <th class="py-2 px-4 text-left">Destination</th>
+              {% for item in similarity_headers %}
+                <th class="py-2 px-4 text-left">
+                  <div class="flex flex-col items-start">
+                    <span class="mb-1">{{ item.label }}</span>
+                    <select id="{{ item.id }}ThresholdSelect" class="border border-gray-300 text-black rounded px-1 py-0.5 text-xs bg-white">
+                      <option value="0.0" selected>All</option>
+                      {% for val in threshold_values %}
+                        <option value="{{ val }}">{{ val|multiply:100|floatformat:1 }}%</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            {% for source, types in grouped.items %}
+              {% with source_index=forloop.counter0 %}
+              <!-- Source Row -->
+              <tr class="bg-gray-100 cursor-pointer" onclick="toggleGroup(event, 'source-{{ source_index }}', '.child-of-source-{{ source_index }}')">
+                <td colspan="6" class="px-4 py-2 text-sm font-semibold text-gray-900">
+                  <i id="icon-source-{{ source_index }}" class="fas fa-chevron-right text-xs transition-transform duration-200"></i>
+                  <i class="fas {{ source|file_icon }} text-blue-500 ml-2"
+                     title="{{ source_doc_text|truncatechars:600 }}"></i>
+                  {{ source }}
+                </td>
+              </tr>
+              <!-- Loop over similarity types -->
+              {% for sim_type, buckets in types.items %}
+                {% with sim_type_index=forloop.counter0 %}
+                <tr class="child-of-source-{{ source_index }} hidden cursor-pointer text-sm text-gray-600 italic bg-gray-50" onclick="toggleGroup(event, 'type-{{ source_index }}-{{ sim_type_index }}', '.child-of-type-{{ source_index }}-{{ sim_type_index }}')">
+                  <td colspan="6" class="px-6 py-2">
+                    <i id="icon-type-{{ source_index }}-{{ sim_type_index }}" class="fas fa-chevron-right text-xs transition-transform duration-200 mr-2"></i>
+
+                    <i id="icon-type-{{ source_index }}-{{ sim_type_index }}b"
+                    class="fas 
+                    {% if sim_type|lower == "meta" %}
+                      fa-info-circle
+                    {% elif sim_type|lower == "text" %}
+                      fa-font
+                    {% elif sim_type|lower == "image" %}
+                      fa-image
+                    {% elif sim_type|lower == "overall" %}
+                      fa-globe
+                    {% else %}
+                      fa-question-circle
+                    {% endif %}
+                    on_class text-xs transition-transform duration-200 mr-2"></i>
+                
+                    {{ sim_type|capfirst }} Similarity 
+                  </td>
+                </tr>
+                {% for bucket, entries in buckets.items %}
+                  {% with bucket_index=forloop.counter0 %}
+                  <tr class="child-of-type-{{ source_index }}-{{ sim_type_index }} hidden cursor-pointer text-sm text-gray-700 bg-gray-50" onclick="toggleGroup(event, 'bucket-{{ source_index }}-{{ sim_type_index }}-{{ bucket_index }}', '.child-of-bucket-{{ source_index }}-{{ sim_type_index }}-{{ bucket_index }}')">
+                    <td colspan="6" class="px-8 py-2">
+                      <i id="icon-bucket-{{ source_index }}-{{ sim_type_index }}-{{ bucket_index }}" class="fas fa-chevron-right text-xs transition-transform duration-200 mr-2"></i>
+                    {% if bucket == "90-100%" %}
+                      <i class="fas fa-eye text-green-600 mr-2"></i>
+                    {% elif bucket == "80-89%" %}
+                      <i class="fas fa-eye text-green-500 mr-2"></i>
+                    {% elif bucket == "70-79%" %}
+                      <i class="fas fa-eye text-green-400 mr-2"></i>
+                    {% elif bucket == "60-69%" %}
+                      <i class="fas fa-eye text-yellow-500 mr-2"></i>
+                    {% elif bucket == "50-59%" %}
+                      <i class="fas fa-eye text-yellow-400 mr-2"></i>
+                    {% elif bucket == "40-49%" %}
+                      <i class="fas fa-eye text-orange-500 mr-2"></i>
+                    {% elif bucket == "30-39%" %}
+                      <i class="fas fa-eye text-orange-400 mr-2"></i>
+                    {% elif bucket == "20-29%" %}
+                      <i class="fas fa-eye text-red-500 mr-2"></i>
+                    {% elif bucket == "10-19%" %}
+                      <i class="fas fa-eye text-red-600 mr-2"></i>
+                    {% elif bucket == "0-9%" %}
+                      <i class="fas fa-eye text-red-700 mr-2"></i>
+                    {% else %}
+                      <i class="fas fa-eye text-gray-600 mr-2"></i>
+                    {% endif %}
+                    {{ bucket }}
+                    </td>
+                  </tr>
+                  {% for entry in entries %}
+                  <tr class="child-of-bucket-{{ source_index }}-{{ sim_type_index }}-{{ bucket_index }} hidden" 
+                      data-meta-sim="{{ entry.meta_sim|default_if_none:'0' }}"
+                      data-text-sim="{{ entry.text_sim|default_if_none:'0' }}"
+                      data-image-sim="{{ entry.image_sim|default_if_none:'0' }}"
+                      data-overall-sim="{{ entry.overall_sim|default_if_none:'0' }}">
+                    <td class="px-10 py-2 text-sm text-gray-800"></td>
+                    <td class="px-4 py-2 text-sm text-gray-800 relative">
+                      <i class="fas {{ entry.destination_icon|file_icon }} text-blue-500 mr-1"
+                         title="{{ entry.doc2_text|truncatechars:600 }}"></i>
+                      {{ entry.destination }}
+                      <button class="ml-2" onclick="toggleText(event, this)">
+                        <i class="fas fa-eye text-blue-600"></i>
+                      </button>
+                      <div class="detail-content hidden absolute top-full left-0 mt-1 p-2 border border-gray-300 rounded bg-white w-96 text-xs text-gray-700 z-10">
+                        <strong>Source Text:</strong> {{ entry.doc1_text|truncatechars:600 }}<br>
+                        <strong>Destination Text:</strong> {{ entry.doc2_text|truncatechars:600 }}
+                      </div>
+                    </td>
+                    <td class="px-4 py-2 text-sm text-gray-800">
+                      <div class="relative bg-gray-200 rounded-full h-2.5 w-24">
+                        <div class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-black">
+                          {{ entry.meta_sim|multiply:100|floatformat:1 }}%
+                        </div>
+                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ entry.meta_sim|multiply:100 }}%;"></div>
+                      </div>
+                    </td>
+                    <td class="px-4 py-2 text-sm text-gray-800">
+                      <div class="relative bg-gray-200 rounded-full h-2.5 w-24">
+                        <div class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-black">
+                          {{ entry.text_sim|multiply:100|floatformat:1 }}%
+                        </div>
+                        <div class="bg-green-600 h-2.5 rounded-full" style="width: {{ entry.text_sim|multiply:100 }}%;"></div>
+                      </div>
+                    </td>
+                    <td class="px-4 py-2 text-sm text-gray-800">
+                      <div class="relative bg-gray-200 rounded-full h-2.5 w-24">
+                        <div class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-black">
+                          {{ entry.image_sim|multiply:100|floatformat:1 }}%
+                        </div>
+                        <div class="bg-orange-500 h-2.5 rounded-full" style="width: {{ entry.image_sim|multiply:100 }}%;"></div>
+                      </div>
+                    </td>
+                    <td class="px-4 py-2 text-sm text-gray-800">
+                      <div class="relative bg-gray-200 rounded-full h-2.5 w-24">
+                        <div class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-black">
+                          {{ entry.overall_sim|multiply:100|floatformat:1 }}%
+                        </div>
+                        <div class="bg-purple-600 h-2.5 rounded-full" style="width: {{ entry.overall_sim|multiply:100 }}%;"></div>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                  {% endwith %}
+                {% endfor %}
+                {% endwith %}
+              {% endfor %}
+              {% endwith %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript: functions and Chart.js initialization remain unchanged, except toggleGroup is updated -->
+<script>
+  function toggleGroup(event, groupId, childSelector) {
+    event.stopPropagation();
+    const immediateRows = document.querySelectorAll(childSelector);
+    const icon = document.getElementById(`icon-${groupId}`);
+    let collapsing = false;
+    // Determine whether we are collapsing (if any immediate child is visible)
+    immediateRows.forEach(row => {
+      if (!row.classList.contains('hidden')) collapsing = true;
+    });
+
+    if (collapsing) {
+      // For collapsing, hide all descendant rows (immediate and nested)
+      let descendantSelector = '';
+      const parts = groupId.split('-'); // e.g., "source-0", "type-0-0", or "bucket-0-0-0"
+      if (parts[0] === 'source') {
+        const index = parts[1];
+        descendantSelector = `tr[class*="child-of-source-${index}"], tr[class*="child-of-type-${index}-"], tr[class*="child-of-bucket-${index}-"]`;
+      } else if (parts[0] === 'type') {
+        const sourceIndex = parts[1];
+        const typeIndex = parts[2];
+        descendantSelector = `tr[class*="child-of-type-${sourceIndex}-${typeIndex}"], tr[class*="child-of-bucket-${sourceIndex}-${typeIndex}-"]`;
+      } else if (parts[0] === 'bucket') {
+        const sourceIndex = parts[1];
+        const typeIndex = parts[2];
+        const bucketIndex = parts[3];
+        descendantSelector = `tr[class*="child-of-bucket-${sourceIndex}-${typeIndex}-${bucketIndex}"]`;
+      }
+      document.querySelectorAll(descendantSelector).forEach(row => {
+        row.classList.add('hidden');
+        // Also hide any open detail expansions within this row
+        const detailContents = row.querySelectorAll('.detail-content');
+        detailContents.forEach(dc => {
+          dc.classList.add('hidden');
+          const toggleIcon = dc.parentNode.querySelector('button i');
+          if (toggleIcon) {
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+          }
+        });
+      });
+      if (icon) icon.classList.remove('rotate-90');
+    } else {
+      // Expanding: only show immediate children (leave descendants collapsed)
+      immediateRows.forEach(row => {
+        row.classList.remove('hidden');
+      });
+      if (icon) icon.classList.add('rotate-90');
+    }
+  }
+
+  function toggleText(event, btn) {
+    event.stopPropagation();
+    const detailDiv = btn.parentElement.querySelector('.detail-content');
+    detailDiv.classList.toggle('hidden');
+    const icon = btn.querySelector('i');
+    if (detailDiv.classList.contains('hidden')) {
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    } else {
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+    }
+  }
+
+  function expandAllNodes() {
+    document.querySelectorAll('[class*="child-of-"]').forEach(el => el.classList.remove('hidden'));
+    document.querySelectorAll('[id^="icon-"]').forEach(icon => icon.classList.add('rotate-90'));
+  }
+
+  function collapseAllNodes() {
+    document.querySelectorAll('[class*="child-of-"]').forEach(el => {
+      el.classList.add('hidden');
+      const detailContents = el.querySelectorAll('.detail-content');
+      detailContents.forEach(dc => {
+        dc.classList.add('hidden');
+        const toggleIcon = dc.parentNode.querySelector('button i');
+        if (toggleIcon) {
+          toggleIcon.classList.remove('fa-eye-slash');
+          toggleIcon.classList.add('fa-eye');
+        }
+      });
+    });
+    document.querySelectorAll('[id^="icon-"]').forEach(icon => icon.classList.remove('rotate-90'));
+  }
+
+  function filterTableRows(thresholds) {
+    document.querySelectorAll('#similarityTable tbody tr[data-meta-sim]').forEach(row => {
+      const meta = parseFloat(row.getAttribute('data-meta-sim') || '0');
+      const text = parseFloat(row.getAttribute('data-text-sim') || '0');
+      const image = parseFloat(row.getAttribute('data-image-sim') || '0');
+      const overall = parseFloat(row.getAttribute('data-overall-sim') || '0');
+      row.style.display = (meta >= thresholds.meta &&
+                           text >= thresholds.text &&
+                           image >= thresholds.image &&
+                           overall >= thresholds.overall) ? '' : 'none';
+    });
+  }
+
+  function filterChartData(thresholds) {
+    const newData = {};
+    labels.forEach(source => {
+      const sourceData = chartRaw[source] || {};
+      for (const key in sourceData) {
+        if (!newData[key]) newData[key] = [];
+      }
+    });
+    labels.forEach(source => {
+      const sourceData = chartRaw[source] || {};
+      for (const key in newData) {
+        let count = sourceData[key] || 0;
+        const parts = key.split('_');
+        if (parts.length > 1) {
+          const simType = parts[0];
+          let bucketStr = parts[1].replace('%','');
+          const bucketStart = parseInt(bucketStr.split('-')[0], 10);
+          const filterThreshold = thresholds[simType] || 0;
+          if (bucketStart < filterThreshold * 100) {
+            count = 0;
+          }
+        }
+        newData[key].push(count);
+      }
+    });
+    similarityChart.data.datasets.forEach(dataset => {
+      if (newData[dataset.label]) {
+        dataset.data = newData[dataset.label];
+      } else {
+        dataset.data = labels.map(() => 0);
+      }
+    });
+    similarityChart.update();
+  }
+
+  function applyFilter() {
+    const thresholds = {
+      meta: parseFloat(document.getElementById('metaThresholdSelect').value),
+      text: parseFloat(document.getElementById('textThresholdSelect').value),
+      image: parseFloat(document.getElementById('imageThresholdSelect').value),
+      overall: parseFloat(document.getElementById('overallThresholdSelect').value)
+    };
+    filterTableRows(thresholds);
+    filterChartData(thresholds);
+  }
+
+  function downloadCSV() {
+    const rows = document.querySelectorAll('#similarityTable tr');
+    let csv = [];
+    rows.forEach(row => {
+      const cells = Array.from(row.querySelectorAll('td, th')).map(cell => '"' + cell.textContent.trim() + '"');
+      if (cells.length) csv.push(cells.join(','));
+    });
+    const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'similarity_report.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  function downloadJSON() {
+    const rows = document.querySelectorAll('#similarityTable tr');
+    let data = [];
+    rows.forEach(row => {
+      const cells = Array.from(row.querySelectorAll('td, th')).map(cell => cell.textContent.trim());
+      if (cells.length) data.push(cells);
+    });
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'similarity_report.json';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  function printReport() {
+    const chartSection = document.getElementById('chartSection').cloneNode(true);
+    const toolbar = chartSection.querySelector('#mergedToolbar');
+    if (toolbar) toolbar.parentNode.removeChild(toolbar);
+    const tableSection = document.getElementById('reportContainer').cloneNode(true);
+    tableSection.querySelectorAll('select').forEach(sel => sel.parentNode.removeChild(sel));
+    tableSection.querySelectorAll('button').forEach(btn => btn.parentNode.removeChild(btn));
+    const printContent = document.createElement('div');
+    printContent.appendChild(chartSection);
+    printContent.appendChild(tableSection);
+    const printWindow = window.open('', 'Print Report', 'height=600,width=800');
+    printWindow.document.write('<html><head><title>Print Report</title>');
+    printWindow.document.write('<style>');
+    printWindow.document.write('body { font-family: sans-serif; margin: 20px; }');
+    printWindow.document.write('table { width: 100%; border-collapse: collapse; }');
+    printWindow.document.write('th, td { border: 1px solid #ddd; padding: 8px; }');
+    printWindow.document.write('th { background: #333; color: #fff; }');
+    printWindow.document.write('</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.body.appendChild(printContent);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  }
+
+  let similarityChart;
+  const chartRaw = {{ chart_data|safe }};
+  const labels = Object.keys(chartRaw);
+  const datasets = [];
+  const colors = ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd','#8c564b'];
+  let typesAndBuckets = new Set();
+  labels.forEach(source => {
+    Object.keys(chartRaw[source]).forEach(tb => typesAndBuckets.add(tb));
+  });
+  typesAndBuckets = [...typesAndBuckets];
+  typesAndBuckets.forEach((key, i) => {
+    datasets.push({
+      label: key,
+      data: labels.map(source => chartRaw[source][key] || 0),
+      backgroundColor: colors[i % colors.length]
+    });
+  });
+
+  function initChart(chartType = 'bar') {
+    const ctx = document.getElementById('similarityChart').getContext('2d');
+    similarityChart = new Chart(ctx, {
+      type: chartType,
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' },
+          title: { display: true, text: 'Similarity Distribution by Source, Bucket, and Type' }
+        },
+        scales: { y: { beginAtZero: true, title: { display: true, text: 'Count' } } }
+      }
+    });
+  }
+
+  function changeChartType() {
+    const newType = document.getElementById('chartTypeSelect').value;
+    if (similarityChart) similarityChart.destroy();
+    initChart(newType);
+    const thresholds = {
+      meta: parseFloat(document.getElementById('metaThresholdSelect').value),
+      text: parseFloat(document.getElementById('textThresholdSelect').value),
+      image: parseFloat(document.getElementById('imageThresholdSelect').value),
+      overall: parseFloat(document.getElementById('overallThresholdSelect').value)
+    };
+    filterChartData(thresholds);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initChart();
+    ['meta', 'text', 'image', 'overall'].forEach(id => {
+      document.getElementById(`${id}ThresholdSelect`).addEventListener('change', applyFilter);
+    });
+    applyFilter();
+    initChart();
+  });
+</script>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .rotate-90 { transform: rotate(90deg); }
+  .hidden { display: none !important; }
+</style>
+{% endblock %}

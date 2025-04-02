@@ -1,0 +1,51 @@
+{% extends "dashboard/base.html" %}
+
+{% block content %}
+<!-- A container to center the content and add padding -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <!-- Page/Section Title -->
+  <h2 class="text-3xl font-bold mb-6">Devices List</h2>
+
+  <!-- A rounded, shadowed container for the table; overflow-x-auto ensures horizontal scrolling on small screens -->
+  <div class="bg-white shadow-lg rounded-lg overflow-x-auto">
+    <!-- A border around the table, plus rounded corners -->
+    <table class="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+      <!-- Table Header with gradient background and white text -->
+      <thead class="bg-gradient-to-r from-gray-900 to-blue-400 text-white uppercase text-sm tracking-wider">
+        <tr>
+          <th class="px-6 py-3 text-left font-semibold">Device Name</th>
+          <th class="px-6 py-3 text-left font-semibold">Operating System</th>
+          <th class="px-6 py-3 text-left font-semibold">Manufacturer</th>
+          <th class="px-6 py-3 text-left font-semibold">Model</th>
+        </tr>
+      </thead>
+      <!-- Table Body -->
+      <tbody class="divide-y divide-gray-200">
+        {% for device in devices %}
+        <!-- Zebra striping with odd/even row classes; hover:bg-gray-50 for a hover highlight -->
+        <tr class="odd:bg-white even:bg-gray-50 hover:bg-gray-100">
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-800">
+            {{ device.deviceName }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+            {{ device.operatingSystem }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+            {{ device.manufacturer }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+            {{ device.model }}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+            No devices available
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

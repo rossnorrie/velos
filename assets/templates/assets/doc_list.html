@@ -1,0 +1,67 @@
+
+
+{% extends "dashboard/base.html" %}
+
+{% load file_icon %}
+
+{% block content %}
+
+
+
+
+<div class="w-full py-6">
+  <h2 class="text-3xl font-bold mb-6 text-left">Documents</h2>
+
+
+
+  <!-- Your existing table can remain below if needed -->
+   <div class="w-full table-auto">
+    
+    <table class="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+      <thead class="bg-gradient-to-r from-gray-900 to-blue-400 text-white uppercase text-sm tracking-wider">
+        <tr>
+          <th class="px-6 py-3 text-left font-semibold">File</th>
+          <th class="px-6 py-3 text-left font-semibold">Author</th>
+          <th class="px-6 py-3 text-left font-semibold">Created</th>
+          <th class="px-6 py-3 text-left font-semibold">Title</th>
+          <th class="px-6 py-3 text-left font-semibold">Subject</th>
+          <th class="px-6 py-3 text-left font-semibold">Keywords</th>
+          <th class="px-6 py-3 text-left font-semibold">Modifed by</th>
+          <th class="px-6 py-3 text-left font-semibold">Revision</th>
+          <th class="px-6 py-3 text-left font-semibold">Category</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        {% for doc in docz %}
+        <tr class="odd:bg-white even:bg-gray-50 hover:bg-gray-100">
+          <td class="px-4 py-3 text-sm text-gray-800">
+            <i class="fas {{ doc.file_name|file_icon }} fa-lg text-blue-500 mr-1" title="{{doc.text_contents}}"></i>
+            {{ doc.file_name }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ doc.author }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ doc.created_date }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ doc.title }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ doc.subject }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ doc.keywords }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ doc.last_modified_by }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ doc.revision }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ doc.category }}</td>
+
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+            No documents available
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+{% endblock %}
+

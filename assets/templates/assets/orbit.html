@@ -1,0 +1,142 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<!-- Page Container -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-3rem)] flex flex-col relative">
+
+  <!-- Banner Section -->
+  <div class="bg-gradient-to-r from-blue-100 via-white to-indigo-100 p-6 rounded-xl shadow mb-6 border border-gray-200">
+    <h1 class="text-4xl font-bold text-gray-800 mb-1">User's Orbit</h1>
+    <p class="text-gray-600 text-lg">Explore employee communication relationships through a connected graph.</p>
+  </div>
+
+  <!-- Controls -->
+  <div class="absolute top-6 right-6 z-10 space-x-2">
+    <button id="reset-btn"
+      class="px-3 py-2 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 shadow transition">
+      Reset View
+    </button>
+    <button id="zoom-in"
+      class="px-3 py-2 text-sm font-medium rounded-md bg-gray-100 hover:bg-gray-200 border border-gray-300 transition">
+      +
+    </button>
+    <button id="zoom-out"
+      class="px-3 py-2 text-sm font-medium rounded-md bg-gray-100 hover:bg-gray-200 border border-gray-300 transition">
+      −
+    </button>
+  </div>
+
+  <!-- Cytoscape Container -->
+  <div id="cy" class="flex-grow bg-white rounded-xl shadow border border-gray-100 transition-all"></div>
+</div>
+
+<!-- Embedded JSON -->
+{{ people_data|json_script:"people-data" }}
+
+<!-- Scripts -->
+<script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+
+<script>
+  const peopleData = JSON.parse(document.getElementById('people-data').textContent);
+
+  let nodes = [];
+  let edges = [];
+  const orbitNodes = {};
+
+  peopleData.forEach(user => {
+    const userId = user.userPrincipalName;
+    if (userId) {
+      nodes.push({ data: { id: userId, label: userId } });
+    }
+
+    if (user.orbit) {
+      user.orbit.forEach(orbitItem => {
+        if (orbitItem.scoredEmailAddresses) {
+          orbitItem.scoredEmailAddresses.forEach(emailObj => {
+            const email = emailObj.address;
+            if (email && !orbitNodes[email]) {
+              orbitNodes[email] = true;
+              nodes.push({ data: { id: email, label: email } });
+            }
+            if (userId && email) {
+              edges.push({
+                data: {
+                  id: `${userId}_${email}`,
+                  source: userId,
+                  target: email
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+  });
+
+  const cy = cytoscape({
+    container: document.getElementById('cy'),
+    elements: nodes.concat(edges),
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'background-color': '#6366F1',
+          'label': 'data(label)',
+          'color': '#fff',
+          'text-valign': 'center',
+          'text-halign': 'center',
+          'font-size': '11px',
+          'width': '40px',
+          'height': '40px',
+          'text-wrap': 'wrap',
+          'text-max-width': 80,
+          'border-width': 2,
+          'border-color': '#E0E7FF'
+        }
+      },
+      {
+        selector: 'node:hover',
+        style: {
+          'background-color': '#4338CA',
+          'cursor': 'pointer',
+          'font-size': '12px'
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 1.5,
+          'line-color': '#CBD5E1',
+          'target-arrow-color': '#CBD5E1',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier'
+        }
+      }
+    ],
+    layout: {
+      name: 'cose',
+      padding: 10
+    }
+  });
+
+  // Controls
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    cy.fit();
+  });
+
+  document.getElementById('zoom-in').addEventListener('click', () => {
+    cy.zoom(cy.zoom() + 0.1);
+    cy.center();
+  });
+
+  document.getElementById('zoom-out').addEventListener('click', () => {
+    cy.zoom(cy.zoom() - 0.1);
+    cy.center();
+  });
+
+  // Optional: simple tooltip using title attribute
+  cy.nodes().forEach(node => {
+    node.qtip = node.data('label'); // could be extended with qTip2 or similar lib
+  });
+</script>
+{% endblock %}

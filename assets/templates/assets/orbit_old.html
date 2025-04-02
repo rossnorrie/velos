@@ -1,0 +1,62 @@
+{% extends 'dashboard/base.html' %}
+{% block content %}
+<div style="display: flex; flex-direction: column; height: 100vh;">
+  <!-- Banner Section -->
+  <div style="padding: 20px; background: #f5f5f5;">
+    <h1 class="text-2xl font-bold mb-4">Rental Page</h1>
+    <p>Manage all rentals here.</p>
+  </div>
+
+  <!-- Cytoscape Graph Container -->
+  <div id="cy" style="flex-grow: 1; border: 1px solid #ccc;"></div>
+</div>
+
+<!-- Include Cytoscape.js from a CDN -->
+<script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+<script>
+  // Initialize the Cytoscape instance
+  var cy = cytoscape({
+    container: document.getElementById('cy'), // container to render in
+
+    // Define nodes and edges
+    elements: [
+      // Nodes
+      { data: { id: 'node1', label: 'Node 1' } },
+      { data: { id: 'node2', label: 'Node 2' } },
+      { data: { id: 'node3', label: 'Node 3' } },
+      // Edges
+      { data: { id: 'edge1', source: 'node1', target: 'node2' } },
+      { data: { id: 'edge2', source: 'node1', target: 'node3' } }
+    ],
+
+    // Style nodes and edges
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'background-color': '#666',
+          'label': 'data(label)',
+          'color': '#fff',
+          'text-valign': 'center',
+          'text-halign': 'center'
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 3,
+          'line-color': '#ccc',
+          'target-arrow-color': '#ccc',
+          'target-arrow-shape': 'triangle'
+        }
+      }
+    ],
+
+    // Layout configuration (grid layout as an example)
+    layout: {
+      name: 'grid',
+      rows: 1
+    }
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% comment %}
+  Expects:
+    - group: dict (with group_by, value, count, percentage, sub_groups, icon, colour)
+    - level: int
+    - parent_path: string (optional)
+    - header_list: list of property names
+{% endcomment %}
+
+{% load unique_id %}
+{% load file_icon %}
+
+{% unique_id as row_id %}
+<tr id="row-{{ row_id }}"
+    class="group-row {% if parent_path %}child-of-{{ parent_path }} hidden{% endif %}"
+    onclick="toggleGroup(event, '{{ row_id }}', '.child-of-{{ row_id }}')">
+
+  {% for h in header_list %}
+    {% if forloop.counter0 == level %}
+      <td class="px-4 py-2" style="padding-left: {{ level|add:"1" }}em;">
+        {% if group.sub_groups %}
+          <i id="icon-{{ row_id }}" class="fas fa-chevron-right text-xs transition-transform duration-200 mr-1"></i>
+        {% endif %}
+        
+        <i class="fas {{ group.value|file_icon }} mr-1"
+           {% if level == 0 and group.colour %}style="color: {{ group.colour }};"{% endif %}></i>
+
+        {{ group.value|default:"(Not Available)" }}
+      </td>
+    {% else %}
+      <td></td>
+    {% endif %}
+  {% endfor %}
+
+  <td class="px-4 py-2">{{ group.count|default:"(Not Available)" }}</td>
+
+  <td class="px-4 py-2 text-sm text-gray-800">
+    <div class="relative bg-gray-200 rounded-full h-2.5 w-24">
+      <div class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-black">
+        {{ group.percentage|default:"(Not Available)"|floatformat:2 }}%
+      </div>
+      <div class="bg-orange-500 h-2.5 rounded-full"
+           style="width: {{ group.percentage|default:"(Not Available)"|floatformat:2 }}%;"></div>
+    </div>
+  </td>
+</tr>
+
+{% if group.sub_groups %}
+  {% for subgroup in group.sub_groups %}
+    {% include "assets/grouping_row.html" with group=subgroup level=level|add:"1" parent_path=row_id header_list=header_list %}
+  {% endfor %}
+{% endif %}
