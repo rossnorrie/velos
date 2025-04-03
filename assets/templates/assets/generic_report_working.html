@@ -4,9 +4,7 @@
 
 
 <!-- Toolbar Section -->
-<!-- Toolbar (Always Visible) -->
-<div id="mergedToolbar" class="w-full flex items-center justify-end space-x-3 bg-gray-100 p-2 rounded-t shadow mb-0 border border-b-0 border-gray-200">
-  <!-- Chart Type Selector -->
+<div id="mergedToolbar" class="w-full flex items-center justify-end space-x-3 bg-gray-100 p-2 rounded shadow mb-6">
   <div class="flex items-center space-x-1">
     <label for="chartTypeSelect" class="sr-only">Chart Type</label>
     <i class="fas fa-chart-bar text-xl text-gray-700"></i>
@@ -19,24 +17,12 @@
       <option value="polarArea">Polar Area</option>
     </select>
   </div>
-
-  <!-- Separator -->
-  <div class="border-l h-5 border-gray-300 mx-2"></div>
-  <!-- Action Buttons -->
-
-
   <a href="javascript:void(0)" onclick="expandAllNodes()" title="Expand All" class="text-gray-700 hover:text-gray-900">
     <i class="fas fa-expand text-xl"></i>
   </a>
   <a href="javascript:void(0)" onclick="collapseAllNodes()" title="Collapse All" class="text-gray-700 hover:text-gray-900">
     <i class="fas fa-compress text-xl"></i>
   </a>
-
-    <!-- Separator -->
-    <div class="border-l h-5 border-gray-300 mx-2"></div>
-
-
-
   <a href="javascript:void(0)" onclick="downloadCSV()" title="Export CSV" class="text-gray-700 hover:text-gray-900">
     <i class="fas fa-file-csv text-xl"></i>
   </a>
@@ -46,46 +32,6 @@
   <a href="javascript:void(0)" onclick="printReport()" title="Print Report" class="text-gray-700 hover:text-gray-900">
     <i class="fas fa-print text-xl"></i>
   </a>
-
-    <!-- Separator -->
-    <div class="border-l h-5 border-gray-300 mx-2"></div>
-
-
-
-  <!-- Expand/Collapse Filters -->
-  <a href="javascript:void(0)" id="filterToggleButton"
-  onclick="toggleFilterPanel()"
-  title="Show/Hide Filters"
-  class="text-gray-700 hover:text-gray-900 relative p-2 rounded transition">
- <i id="filterIcon" class="fas fa-filter text-xl"></i>
-</a>
-</div>
-
-<!-- Filter Panel (Initially Hidden) -->
-<div id="filterPanel" class="hidden bg-gray-50 p-4 rounded-b shadow border border-t-0 border-gray-200 mb-6">
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-    {% for header in header_list %}
-      <div>
-        <label for="{{ header }}Filter" class="block text-sm font-medium text-gray-700">
-          Filter by {{ header|capfirst }}
-        </label>
-        <input type="text"
-               id="{{ header }}Filter"
-               name="{{ header }}Filter"
-               placeholder="Enter value..."
-               class="w-full border border-gray-300 rounded px-2 py-1 mt-1" />
-      </div>
-    {% endfor %}
-  </div>
-
-  <!-- Action Buttons -->
-  <div class="flex justify-end space-x-2">
-    <button onclick="applyDynamicFilters()"
-            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
-      <i class="fas fa-check mr-1"></i> Apply
-    </button>
-
-  </div>
 </div>
 
 <div class="w-full py-6">
@@ -255,28 +201,8 @@
     initChart(newType);
   }
 
-  function toggleFilterPanel_old() {
-    document.getElementById("filterPanel").classList.toggle("hidden");
-  }
-
   function toggleFilterPanel() {
-    const panel = document.getElementById("filterPanel");
-    const icon = document.getElementById("filterIcon");
-    const button = document.getElementById("filterToggleButton");
-  
-    const isVisible = !panel.classList.contains("hidden");
-    panel.classList.toggle("hidden");
-  
-    // Update icon and style
-    if (isVisible) {
-      icon.classList.remove("fa-filter-circle-xmark", "text-blue-600");
-      icon.classList.add("fa-filter");
-      button.classList.remove("bg-blue-100", "border", "border-blue-300");
-    } else {
-      icon.classList.remove("fa-filter");
-      icon.classList.add("fa-filter-circle-xmark", "text-blue-600");
-      button.classList.add("bg-blue-100", "border", "border-blue-300");
-    }
+    document.getElementById("filterPanel").classList.toggle("hidden");
   }
 
   document.addEventListener("DOMContentLoaded", () => {

@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import AssetViewSet, LeaseViewSet, asset_list, asset_ms_graph_asset_list, asset_ms_graph_user_list, asset_ms_graph_user_orbit, asset_list, doc_list, doc_sim, tree_report_view
+from .views import AssetViewSet, LeaseViewSet, asset_list, asset_ms_graph_asset_list, asset_ms_graph_user_list, asset_ms_graph_user_orbit, asset_list, doc_list, doc_sim, tree_report_view, report_dashboard
 from . import views
 
 # ✅ API Router
@@ -19,4 +19,5 @@ urlpatterns = [
     path('ms_graph_asset_list/', asset_ms_graph_asset_list, name='asset_ms_graph_asset_list'),
     path('ms_graph_user_list/', asset_ms_graph_user_list, name='asset_ms_graph_user_list'),
     path('ms_graph_user_orbit/', asset_ms_graph_user_orbit, name='asset_ms_graph_user_orbit'),
+    path('report_dashboard/', report_dashboard, name='report_dashboard'),
 ]

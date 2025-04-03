@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework import viewsets
-from .models import asset, lease, documentz, similarityz
+from .models import asset, lease, documentz, similarityz, report_categories, reports
 from .serializers import AssetSerializer, LeaseSerializer
 import asyncio
 import configparser
@@ -388,3 +388,16 @@ def asset_ms_graph_user_orbit(request):
 
     if users:
         return render(request, 'assets/orbit.html', {'people_data': users})
+
+
+@login_required
+def report_dashboard(request):
+
+
+    reports = report_categories.objects.all()
+
+    return render(request, 'assets/report_dashboard.html', {
+        'reports': reports,
+
+    })
+

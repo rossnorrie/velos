@@ -1,0 +1,70 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="max-w-screen-xl mx-auto p-5 sm:p-10 md:p-16">
+    <h2 class="text-3xl font-bold mb-6 flex items-center">
+        <i class="fas fa-chart-bar text-4xl mr-3"></i>
+        Report Dashboard
+      </h2>
+      <h3 class="w-[70%] text-sm mb-6">
+        This is the Report Dashboard, where all available reports are grouped by category. Each section represents a specific report category, and within each, you’ll find a set of related reports.  This layout helps you quickly find and access reports by their logical grouping.
+          </h3>
+    
+  {% for category in reports %}
+  <div class="border-b mb-5 flex justify-between text-sm">
+    <div class="text-indigo-600 flex items-center pb-2 pr-2 border-b-2 border-indigo-600">
+      
+      <!-- Font Awesome Icon (from category.cat_icon) -->
+      <i class="{{ category.cat_icon }} text-xl mr-3"></i>
+
+      <div class="mb-2">
+        <a class="font-semibold inline-block normal-case text-base">{{ category.cat_name }}</a>
+        <p class="text-gray-500 text-sm">
+          {{ category.cat_description }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 mb-10">
+
+    {% for report in category.report_cat.all %}
+    <div class="rounded overflow-hidden shadow-lg flex flex-col">
+      <div class="relative">
+        <img class="w-full" src="{{ report.report_image }}?auto=compress&amp;cs=tinysrgb&amp;dpr=1&amp;w=500" alt="{{ report.name }}">
+        <div class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25"></div>
+
+        <a href="{% url 'asset_ms_graph_asset_list' %}">
+          <div class="text-xs absolute top-0 right-0 bg-indigo-600 px-4 py-2 text-white mt-3 mr-3 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
+            Launch...
+          </div>
+        </a>
+      </div>
+
+      <div class="px-6 py-4 mb-auto">
+        <a href="{% url 'asset_ms_graph_asset_list' %}" class="font-medium text-lg inline-block hover:text-indigo-600 transition duration-500 ease-in-out mb-2">
+          {{ report.name }}
+        </a>
+        <p class="text-gray-500 text-sm">
+          {{ report.description }}
+        </p>
+      </div>
+
+      <div class="px-6 py-3 flex flex-row items-center justify-between bg-gray-100">
+        <span class="py-1 text-xs font-regular text-gray-900 mr-1 flex flex-row items-center">
+          <svg height="13px" width="13px" viewBox="0 0 512 512">
+            <path d="M256,0C114.837,0,0,114.837,0,256s114.837,256,256,256s256-114.837,256-256..." />
+          </svg>
+          <span class="ml-1">{{ report.datestamp|timesince }} ago</span>
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+
+  </div>
+  {% endfor %}
+
+</div>
+
+{% endblock %}
