@@ -76,5 +76,6 @@ class reports(models.Model):
     report_image = models.CharField(max_length=255, null=True, blank=True)
     datestamp = models.DateTimeField(auto_now_add=True)
 
+
     def __str__(self):
         return self.name or f"Report {self.report_id}"

@@ -66,103 +66,6 @@
             </a>
           </li>
 
-          <!-- MS Intune User Data (Parent Item) -->
-          <li class="py-2 px-4 hover:bg-gray-700">
-            <!-- Top-level button that toggles the submenu -->
-            <button
-              type="button"
-              class="flex items-center w-full justify-between focus:outline-none"
-              onclick="toggleSubmenu('intuneSubmenu')"
-            >
-              <div class="flex items-center">
-                <i class="fas fa-chart-bar w-5 h-5"></i>
-                <span class="ml-2 sidebar-text">MS Graph</span>
-              </div>
-              <i class="fas fa-caret-down"></i>
-            </button>
-
-            <!-- Submenu -->
-            <ul id="intuneSubmenu" class="hidden pl-6 mt-2">
-              <li class="py-1 hover:bg-gray-700">
-                <a href="{% url 'asset_ms_graph_user_list' %}" class="flex items-center">
-                  <i class="fas fa-user w-5 h-5"></i>
-                  <span class="ml-2 sidebar-text">Employee's</span>
-                </a>
-              </li>
-              <li class="py-1 hover:bg-gray-700">
-                <a href="{% url 'asset_ms_graph_user_orbit' %}" class="flex items-center">
-                  <i class="fas fa-globe w-5 h-5"></i>
-                  <span class="ml-2 sidebar-text">Employee's Orbit</span>
-                </a>
-              </li>
-              <li class="py-1 hover:bg-gray-700">
-                <a href="{% url 'asset_ms_graph_asset_list' %}" class="flex items-center">
-                  <i class="fas fa-laptop w-5 h-5"></i>
-                  <span class="ml-2 sidebar-text">Device's</span>
-                </a>
-              </li>
-            </ul>
-          </li>
-
-
-
-
-
-
-
-
-
-          <!-- MS Intune User Data (Parent Item) -->
-          <li class="py-2 px-4 hover:bg-gray-700">
-            <!-- Top-level button that toggles the submenu -->
-            <button
-              type="button"
-              class="flex items-center w-full justify-between focus:outline-none"
-              onclick="toggleSubmenu('docSubmenu')"
-            >
-              <div class="flex items-center">
-                <i class="fas fa-file-alt w-5 h-5"></i>
-                <span class="ml-2 sidebar-text">Documents</span>
-              </div>
-              <i class="fas fa-caret-down"></i>
-            </button>
-
-            <!-- Submenu -->
-            <ul id="docSubmenu" class="hidden pl-6 mt-2">
-              <li class="py-1 hover:bg-gray-700">
-                <a href="{% url 'doc_list' %}" class="flex items-center">
-                  <i class="fas fa-sticky-note w-5 h-5"></i>
-                  <span class="ml-2 sidebar-text">Lotus Notes Extract</span>
-                </a>
-              </li>
-              <li class="py-1 hover:bg-gray-700">
-                <a href="{% url 'doc_sim' %}" class="flex items-center">
-                  <i class="fas fa-network-wired w-5 h-5"></i>
-                  <span class="ml-2 sidebar-text">Lotus Notes Similarity</span>
-                </a>
-              </li>
-
-            </ul>
-          </li>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
           <li class="py-2 px-4 hover:bg-gray-700">
@@ -177,41 +80,13 @@
               <span class="ml-2 sidebar-text">Rental</span>
             </a>
           </li>
-          <!-- MS Intune User Data (Parent Item) -->
           <li class="py-2 px-4 hover:bg-gray-700">
-            <!-- Top-level button that toggles the submenu -->
-            <button
-              type="button"
-              class="flex items-center w-full justify-between focus:outline-none"
-              onclick="toggleSubmenu('genSubmenu')"
-            >
-              <div class="flex items-center">
-                <i class="fas fa-file-alt w-5 h-5"></i>
-                <span class="ml-2 sidebar-text">Reports</span>
-              </div>
-              <i class="fas fa-caret-down"></i>
-            </button>
+            <a href="{% url 'report_dashboard' %}" class="flex items-center">
+              <i class="fas fa-door-open w-5 h-5"></i>
+              <span class="ml-2 sidebar-text">Reports</span>
+            </a>
+          </li>
 
-            <!-- Submenu -->
-            <ul id="genSubmenu" class="hidden pl-6 mt-2">
-              <li class="py-1 hover:bg-gray-700">
-                <a href="{% url 'tree_report_view' %}" class="flex items-center">
-                  <i class="fas fa-sticky-note w-5 h-5"></i>
-                  <span class="ml-2 sidebar-text">Hardware 1</span>
-                </a>
-              </li>
-              <li class="py-1 hover:bg-gray-700">
-                <a href="{% url 'asset_ms_graph_asset_list' %}" class="flex items-center">
-                  <i class="fas fa-network-wired w-5 h-5"></i>
-                  <span class="ml-2 sidebar-text">Hardware 2</span>
-                </a>
-              </li>
-              <li class="py-1 hover:bg-gray-700">
-                <a href="{% url 'report_dashboard' %}" class="flex items-center">
-                  <i class="fas fa-network-wired w-5 h-5"></i>
-                  <span class="ml-2 sidebar-text">Report Dashboard</span>
-                </a>
-              </li>
 
             </ul>
           </li>
