@@ -15,6 +15,7 @@ from django.contrib.auth.decorators import login_required
 from collections import defaultdict
 from django.shortcuts import render
 from django.utils.safestring import mark_safe
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 
 
@@ -153,6 +154,88 @@ def gen_report(request):
     
 @login_required
 def asset_ms_graph_asset_list(request, group_by_properties=None):
+    # Parse group_by_properties from query string if not passed as URL param
+    group_by_properties = group_by_properties or request.GET.get("tree_view")
+
+    # ✅ List of valid MS Graph managedDevices fields (customize as needed)
+    VALID_FIELDS = {
+        "id", "manufacturer", "model", "operatingSystem", "osVersion",
+        "deviceName", "lastSyncDateTime", "userPrincipalName", "enrolledDateTime"
+    }
+
+    grouping_fields = []
+    if group_by_properties:
+        print("Raw group_by_properties:", group_by_properties)
+        # Split and validate
+        grouping_fields = [field.strip() for field in group_by_properties.split(",")]
+        grouping_fields = [f for f in grouping_fields if f in VALID_FIELDS]
+        print("Validated grouping_fields:", grouping_fields)
+
+    # Reconstruct cleaned group_by_properties string
+    cleaned_group_by_properties = ",".join(grouping_fields)
+
+    if not grouping_fields:
+        return render(request, 'assets/error_page.html', {
+            'error_message': 'No valid grouping fields provided.'
+        })
+
+    # Initialize your MSGraphClient
+    client = ms_graph_toolkit.MSGraphClient(
+        tenant_id="42fd9015-de4d-4223-a368-baeacab48927",
+        client_id="2bc1c9b9-d0ad-4ff1-ac90-f5f54f942efb",
+        client_secret="o5B8Q~XnkYM_BFpZ3anY~5lzrSiVqqGW3P_60br1",
+        baseline="1"
+    )
+
+    try:
+        devices = client.query_devices_extended(
+            email=None,
+            start_date=None,
+            end_date=None,
+            top=1000,
+            max_retries=None,
+            group_by_properties=cleaned_group_by_properties
+        )
+
+        if not devices:
+            return render(request, 'assets/error_page.html', {
+                'error_message': 'No devices found.'
+            })
+
+        if isinstance(devices, list) and all(isinstance(d, dict) for d in devices):
+            # Group and enhance the data
+            full_grouped_data = group_devices_recursively(devices, grouping_fields)
+            full_grouped_data = add_icon_and_colour(full_grouped_data)
+
+            # --- Pagination: Only paginate the top-level groups ---
+            paginator = Paginator(full_grouped_data, 10)  # 10 groups per page
+            page = request.GET.get('page')
+            try:
+                paged_groups = paginator.page(page)
+            except PageNotAnInteger:
+                paged_groups = paginator.page(1)
+            except EmptyPage:
+                paged_groups = paginator.page(paginator.num_pages)
+
+            # Pass the full data for the chart and paginated data for the table
+            return render(request, 'assets/generic_report.html', {
+                'groups': paged_groups,  # Paginated groups for table
+                'groups_json': mark_safe(json.dumps(full_grouped_data)),  # Full data for chart rendering
+                'header_list': grouping_fields,
+                'paginator': paginator,
+            })
+        else:
+            return render(request, 'assets/error_page.html', {
+                'error_message': 'The data structure is not a list of dictionaries as expected.'
+            })
+
+    except Exception as e:
+        return render(request, 'assets/error_page.html', {
+            'error_message': f'An error occurred: {e}'
+        })
+        
+@login_required        
+def asset_ms_graph_asset_list_working(request, group_by_properties=None):
     # Parse group_by_properties from query string if not passed as URL param
     group_by_properties = group_by_properties or request.GET.get("tree_view")
 

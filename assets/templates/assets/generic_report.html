@@ -24,7 +24,6 @@
   <div class="border-l h-5 border-gray-300 mx-2"></div>
   <!-- Action Buttons -->
 
-
   <a href="javascript:void(0)" onclick="expandAllNodes()" title="Expand All" class="text-gray-700 hover:text-gray-900">
     <i class="fas fa-expand text-xl"></i>
   </a>
@@ -32,10 +31,8 @@
     <i class="fas fa-compress text-xl"></i>
   </a>
 
-    <!-- Separator -->
-    <div class="border-l h-5 border-gray-300 mx-2"></div>
-
-
+  <!-- Separator -->
+  <div class="border-l h-5 border-gray-300 mx-2"></div>
 
   <a href="javascript:void(0)" onclick="downloadCSV()" title="Export CSV" class="text-gray-700 hover:text-gray-900">
     <i class="fas fa-file-csv text-xl"></i>
@@ -47,18 +44,16 @@
     <i class="fas fa-print text-xl"></i>
   </a>
 
-    <!-- Separator -->
-    <div class="border-l h-5 border-gray-300 mx-2"></div>
-
-
+  <!-- Separator -->
+  <div class="border-l h-5 border-gray-300 mx-2"></div>
 
   <!-- Expand/Collapse Filters -->
   <a href="javascript:void(0)" id="filterToggleButton"
-  onclick="toggleFilterPanel()"
-  title="Show/Hide Filters"
-  class="text-gray-700 hover:text-gray-900 relative p-2 rounded transition">
- <i id="filterIcon" class="fas fa-filter text-xl"></i>
-</a>
+     onclick="toggleFilterPanel()"
+     title="Show/Hide Filters"
+     class="text-gray-700 hover:text-gray-900 relative p-2 rounded transition">
+    <i id="filterIcon" class="fas fa-filter text-xl"></i>
+  </a>
 </div>
 
 <!-- Filter Panel (Initially Hidden) -->
@@ -84,7 +79,6 @@
             class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
       <i class="fas fa-check mr-1"></i> Apply
     </button>
-
   </div>
 </div>
 
@@ -97,33 +91,48 @@
     This report shows a nested grouping structure. Each row displays the <strong>Value</strong>, 
     <strong>Count</strong>, and <strong>Percentage</strong>. Each node shows an icon, and top-level nodes have chart colours applied.
   </h3>
-<!-- Chart Section -->
-<div id="chartSection" class="relative mb-6">
-  <div class="w-[80%] h-[75vh] mx-auto">
-    <canvas id="groupingChart"></canvas>
+  
+  <!-- Chart Section -->
+  <div id="chartSection" class="relative mb-6">
+    <div class="w-[80%] h-[75vh] mx-auto">
+      <canvas id="groupingChart"></canvas>
+    </div>
   </div>
-</div>
 
-<!-- Report Table -->
-<div id="reportContainer">
-  <div class="relative">
-    <div class="overflow-x-auto border border-gray-200 rounded-lg">
-      <table id="groupingTable" class="min-w-full bg-white">
-        <thead>
-          <tr>
-            {% for header in header_list %}
-              <th class="py-2 px-4 text-left text-white bg-gray-800">{{ header|capfirst }}</th>
+  <!-- Report Table -->
+  <div id="reportContainer">
+    <div class="relative">
+      <div class="overflow-x-auto border border-gray-200 rounded-lg">
+        <table id="groupingTable" class="min-w-full bg-white">
+          <thead>
+            <tr>
+              {% for header in header_list %}
+                <th class="py-2 px-4 text-left text-white bg-gray-800">{{ header|capfirst }}</th>
+              {% endfor %}
+              <th class="py-2 px-4 text-left text-white bg-gray-800">Count</th>
+              <th class="py-2 px-4 text-left text-white bg-gray-800">Percentage</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for group in groups %}
+              {% include "assets/grouping_row.html" with group=group level=0 parent_path="" header_list=header_list %}
             {% endfor %}
-            <th class="py-2 px-4 text-left text-white bg-gray-800">Count</th>
-            <th class="py-2 px-4 text-left text-white bg-gray-800">Percentage</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for group in groups %}
-            {% include "assets/grouping_row.html" with group=group level=0 parent_path="" header_list=header_list %}
-          {% endfor %}
-        </tbody>          
-      </table>
+          </tbody>          
+        </table>
+      </div>
+    </div>
+    
+    <!-- Pagination Controls -->
+    <div class="pagination mt-4 flex justify-center space-x-4">
+      {% if groups.has_previous %}
+        <a href="?page={{ groups.previous_page_number }}" class="px-3 py-1 border rounded hover:bg-gray-200">Previous</a>
+      {% endif %}
+  
+      <span class="px-3 py-1">Page {{ groups.number }} of {{ groups.paginator.num_pages }}</span>
+  
+      {% if groups.has_next %}
+        <a href="?page={{ groups.next_page_number }}" class="px-3 py-1 border rounded hover:bg-gray-200">Next</a>
+      {% endif %}
     </div>
   </div>
 </div>

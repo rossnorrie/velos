@@ -11,19 +11,17 @@
 
 {% unique_id as row_id %}
 <tr id="row-{{ row_id }}"
-    class="group-row {% if parent_path %}child-of-{{ parent_path }} hidden{% endif %}"
+    class="group-row {% if parent_path %}child-of-{{ parent_path }} hidden{% else %}top-level{% endif %}"
     {% if group.sub_groups %}onclick="toggleGroup(event, '{{ row_id }}', '.child-of-{{ row_id }}')" {% endif %}>
-
+  
   {% for h in header_list %}
     {% if forloop.counter0 == level %}
       <td data-header="{{ h }}" class="px-4 py-2 align-middle" style="padding-left: {{ level|add:"1" }}em;">
         {% if group.sub_groups %}
           <i id="icon-{{ row_id }}" class="fas fa-chevron-right text-xs transition-transform duration-200 mr-1"></i>
         {% endif %}
-
         <i class="fas {{ group.value|file_icon }} mr-1"
            {% if level == 0 and group.colour %}style="color: {{ group.colour }};"{% endif %}></i>
-
         <span>{{ group.value|default:"(Not Available)" }}</span>
       </td>
     {% else %}
