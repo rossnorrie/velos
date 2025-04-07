@@ -153,9 +153,13 @@ def gen_report(request):
     return render(request, 'assets/gen_report.html', context)
     
 @login_required
-def asset_ms_graph_asset_list(request, group_by_properties=None):
+def asset_ms_graph_asset_list(request, group_by_properties=None, header_text=None):
     # Parse group_by_properties from query string if not passed as URL param
     group_by_properties = group_by_properties or request.GET.get("tree_view")
+    report_name = header_text or request.GET.get("report_name")
+    # Retrieve additional query parameters for report properties.
+    report_description = request.GET.get("report_description")
+    report_icon = request.GET.get("report_icon")
 
     # ✅ List of valid MS Graph managedDevices fields (customize as needed)
     VALID_FIELDS = {
@@ -217,12 +221,16 @@ def asset_ms_graph_asset_list(request, group_by_properties=None):
             except EmptyPage:
                 paged_groups = paginator.page(paginator.num_pages)
 
-            # Pass the full data for the chart and paginated data for the table
+            # Pass the full data for the chart and paginated data for the table,
+            # along with the report properties from the query string.
             return render(request, 'assets/generic_report.html', {
                 'groups': paged_groups,  # Paginated groups for table
                 'groups_json': mark_safe(json.dumps(full_grouped_data)),  # Full data for chart rendering
                 'header_list': grouping_fields,
                 'paginator': paginator,
+                'report_name': report_name,
+                'report_description': report_description,
+                'report_icon': report_icon,
             })
         else:
             return render(request, 'assets/error_page.html', {
