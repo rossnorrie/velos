@@ -152,9 +152,33 @@ def gen_report(request):
     return render(request, 'assets/gen_report.html', context)
     
 @login_required
-def asset_ms_graph_asset_list(request):
-    group_by_properties = 'manufacturer, model, operatingSystem, osVersion'  # Customize as needed
+def asset_ms_graph_asset_list(request, group_by_properties=None):
+    # Parse group_by_properties from query string if not passed as URL param
+    group_by_properties = group_by_properties or request.GET.get("tree_view")
 
+    # ✅ List of valid MS Graph managedDevices fields (customize as needed)
+    VALID_FIELDS = {
+        "id", "manufacturer", "model", "operatingSystem", "osVersion",
+        "deviceName", "lastSyncDateTime", "userPrincipalName", "enrolledDateTime"
+    }
+
+    grouping_fields = []
+    if group_by_properties:
+        print("Raw group_by_properties:", group_by_properties)
+        # Split and validate
+        grouping_fields = [field.strip() for field in group_by_properties.split(",")]
+        grouping_fields = [f for f in grouping_fields if f in VALID_FIELDS]
+        print("Validated grouping_fields:", grouping_fields)
+
+    # Reconstruct cleaned group_by_properties string
+    cleaned_group_by_properties = ",".join(grouping_fields)
+
+    if not grouping_fields:
+        return render(request, 'assets/error_page.html', {
+            'error_message': 'No valid grouping fields provided.'
+        })
+
+    # Initialize your MSGraphClient
     client = ms_graph_toolkit.MSGraphClient(
         tenant_id="42fd9015-de4d-4223-a368-baeacab48927",
         client_id="2bc1c9b9-d0ad-4ff1-ac90-f5f54f942efb",
@@ -169,7 +193,7 @@ def asset_ms_graph_asset_list(request):
             end_date=None,
             top=1000,
             max_retries=None,
-            group_by_properties=group_by_properties
+            group_by_properties=cleaned_group_by_properties
         )
 
         if not devices:
@@ -178,17 +202,13 @@ def asset_ms_graph_asset_list(request):
             })
 
         if isinstance(devices, list) and all(isinstance(d, dict) for d in devices):
-            group_by_properties_list = [h.strip() for h in group_by_properties.split(",")]
-            grouped_data = group_devices_recursively(devices, group_by_properties_list)
+            grouped_data = group_devices_recursively(devices, grouping_fields)
             grouped_data = add_icon_and_colour(grouped_data)
 
-            # ✅ Fix: Proper JSON serialization for safe JavaScript embedding
-            groups_json = mark_safe(json.dumps(grouped_data))
-
             return render(request, 'assets/generic_report.html', {
-                'groups': grouped_data,  # used in template rendering
-                'groups_json': mark_safe(json.dumps(grouped_data)),  # used for JS
-                'header_list': group_by_properties_list,
+                'groups': grouped_data,
+                'groups_json': mark_safe(json.dumps(grouped_data)),
+                'header_list': grouping_fields,
             })
         else:
             return render(request, 'assets/error_page.html', {

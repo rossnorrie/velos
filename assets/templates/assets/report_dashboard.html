@@ -36,7 +36,8 @@
             <div class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25"></div>
 
             {% if report.report_view %}
-              <a href="{% url report.report_view %}">
+            <a href="{% url report.report_view %}{% if report.tree_items %}?tree_view={{ report.tree_items|urlencode }}{% endif %}">
+
                 <div class="text-xs absolute top-0 right-0 bg-indigo-600 px-4 py-2 text-white mt-3 mr-3 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
                   Launch...
                 </div>
@@ -48,8 +49,8 @@
             <div class="flex items-center mb-2">
               <i class="{{ report.report_icon }} text-xl text-indigo-600 mr-2"></i>
               {% if report.report_view %}
-                <a href="{% url report.report_view %}" class="font-medium text-lg hover:text-indigo-600 transition duration-500 ease-in-out">
-                  {{ report.name }}
+              <a href="{% url report.report_view %}{% if report.tree_items %}?tree_view={{ report.tree_items|urlencode }}{% endif %}" class="font-medium text-lg hover:text-indigo-600 transition duration-500 ease-in-out">
+                {{ report.name }}
                 </a>
               {% else %}
                 <span class="font-medium text-lg text-gray-400">{{ report.name }}</span>
