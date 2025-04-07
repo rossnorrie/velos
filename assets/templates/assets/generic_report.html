@@ -2,9 +2,7 @@
 {% load static %}
 {% block content %}
 
-
 <!-- Toolbar Section -->
-<!-- Toolbar (Always Visible) -->
 <div id="mergedToolbar" class="w-full flex items-center justify-end space-x-3 bg-gray-100 p-2 rounded-t shadow mb-0 border border-b-0 border-gray-200">
   <!-- Chart Type Selector -->
   <div class="flex items-center space-x-1">
@@ -20,10 +18,24 @@
     </select>
   </div>
 
+  <!-- Page Size Selector (using the same methodology as filters) -->
+  <div class="flex items-center space-x-1">
+    <label for="pageSizeSelect" class="sr-only">Page Size</label>
+    <i class="fas fa-list-ol text-xl text-gray-700"></i>
+    <select id="pageSizeSelect" class="border border-gray-300 rounded px-2 py-1" onchange="updatePageSize()">
+      <option value="10" {% if request.GET.page_size == "10" or not request.GET.page_size %}selected{% endif %}>10</option>
+      <option value="25" {% if request.GET.page_size == "25" %}selected{% endif %}>25</option>
+      <option value="50" {% if request.GET.page_size == "50" %}selected{% endif %}>50</option>
+      <option value="100" {% if request.GET.page_size == "100" %}selected{% endif %}>100</option>
+      <option value="250" {% if request.GET.page_size == "250" %}selected{% endif %}>250</option>
+      <option value="500" {% if request.GET.page_size == "500" %}selected{% endif %}>500</option>
+    </select>
+  </div>
+
   <!-- Separator -->
   <div class="border-l h-5 border-gray-300 mx-2"></div>
-  <!-- Action Buttons -->
 
+  <!-- Action Buttons -->
   <a href="javascript:void(0)" onclick="expandAllNodes()" title="Expand All" class="text-gray-700 hover:text-gray-900">
     <i class="fas fa-expand text-xl"></i>
   </a>
@@ -48,10 +60,7 @@
   <div class="border-l h-5 border-gray-300 mx-2"></div>
 
   <!-- Expand/Collapse Filters -->
-  <a href="javascript:void(0)" id="filterToggleButton"
-     onclick="toggleFilterPanel()"
-     title="Show/Hide Filters"
-     class="text-gray-700 hover:text-gray-900 relative p-2 rounded transition">
+  <a href="javascript:void(0)" id="filterToggleButton" onclick="toggleFilterPanel()" title="Show/Hide Filters" class="text-gray-700 hover:text-gray-900 relative p-2 rounded transition">
     <i id="filterIcon" class="fas fa-filter text-xl"></i>
   </a>
 </div>
@@ -64,19 +73,13 @@
         <label for="{{ header }}Filter" class="block text-sm font-medium text-gray-700">
           Filter by {{ header|capfirst }}
         </label>
-        <input type="text"
-               id="{{ header }}Filter"
-               name="{{ header }}Filter"
-               placeholder="Enter value..."
-               class="w-full border border-gray-300 rounded px-2 py-1 mt-1" />
+        <input type="text" id="{{ header }}Filter" name="{{ header }}Filter" placeholder="Enter value..." class="w-full border border-gray-300 rounded px-2 py-1 mt-1" />
       </div>
     {% endfor %}
   </div>
-
   <!-- Action Buttons -->
   <div class="flex justify-end space-x-2">
-    <button onclick="applyDynamicFilters()"
-            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+    <button onclick="applyDynamicFilters()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
       <i class="fas fa-check mr-1"></i> Apply
     </button>
   </div>
@@ -123,24 +126,39 @@
     </div>
     
     <!-- Pagination Controls -->
-    <div class="pagination mt-4 flex justify-center space-x-4">
+    <div class="pagination mt-6 flex justify-center items-center space-x-2">
       {% if groups.has_previous %}
-        <a href="?page={{ groups.previous_page_number }}" class="px-3 py-1 border rounded hover:bg-gray-200">Previous</a>
+        <a href="?page={{ groups.previous_page_number }}" class="px-4 py-2 bg-gray-50 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
+          Previous
+        </a>
       {% endif %}
   
-      <span class="px-3 py-1">Page {{ groups.number }} of {{ groups.paginator.num_pages }}</span>
+      <span class="px-4 py-2 text-gray-700">
+        Page {{ groups.number }} of {{ groups.paginator.num_pages }}
+      </span>
   
       {% if groups.has_next %}
-        <a href="?page={{ groups.next_page_number }}" class="px-3 py-1 border rounded hover:bg-gray-200">Next</a>
+        <a href="?page={{ groups.next_page_number }}" class="px-4 py-2 bg-gray-50 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
+          Next
+        </a>
       {% endif %}
     </div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
   const groups = {{ groups_json|safe }};
+
+  function updatePageSize() {
+    const select = document.getElementById("pageSizeSelect");
+    const pageSize = select.value;
+    // Update the URL query parameter for page_size and reset to page 1.
+    const url = new URL(window.location.href);
+    url.searchParams.set('page_size', pageSize);
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+  }
 
   function toggleGroup(event, groupId, childSelector) {
     event.stopPropagation();
@@ -262,10 +280,6 @@
     const newType = document.getElementById("chartTypeSelect").value;
     if (groupingChart) groupingChart.destroy();
     initChart(newType);
-  }
-
-  function toggleFilterPanel_old() {
-    document.getElementById("filterPanel").classList.toggle("hidden");
   }
 
   function toggleFilterPanel() {
