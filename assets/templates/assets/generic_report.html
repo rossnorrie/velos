@@ -23,9 +23,7 @@
       <option value="radar">Radar</option>
       <option value="polarArea">Polar Area</option>
       <option value="nodegraph">Node Graph</option>
-      <!-- [ADDED] -->
       <option value="wordCloud">Word Cloud</option>
-      <!-- [/ADDED] -->
     </select>
   </div>
 
@@ -65,6 +63,15 @@
   </a>
   <a href="javascript:void(0)" onclick="printReport()" title="Print Report" class="text-gray-700 hover:text-gray-900">
     <i class="fas fa-print text-xl"></i>
+  </a>
+
+  <!-- Extra Export Buttons -->
+  <div class="border-l h-5 border-gray-300 mx-2"></div>
+  <a href="javascript:void(0)" onclick="exportTableToExcel()" title="Export Excel" class="text-gray-700 hover:text-gray-900">
+    <i class="fas fa-file-excel text-xl"></i>
+  </a>
+  <a href="javascript:void(0)" onclick="exportTableToPDF()" title="Export PDF" class="text-gray-700 hover:text-gray-900">
+    <i class="fas fa-file-pdf text-xl"></i>
   </a>
 
   <!-- Separator -->
@@ -121,14 +128,32 @@
   <div id="reportContainer">
     <div class="relative">
       <div class="overflow-x-auto border border-gray-200 rounded-lg">
-        <table id="groupingTable" class="min-w-full bg-white">
+        <!-- [NOTE] By default, sorted ascending on column 0 -->
+        <table id="groupingTable" class="min-w-full bg-white"
+               data-sort-direction="asc" data-sorted-column-index="0">
           <thead>
             <tr>
               {% for header in header_list %}
-                <th class="py-2 px-4 text-left text-white bg-gray-800">{{ header|capfirst }}</th>
+                <th class="py-2 px-4 text-left text-white bg-gray-800 cursor-pointer"
+                    onclick="sortTableByColumn('groupingTable', {{ forloop.counter0 }})">
+                  {{ header|capfirst }}
+                  <!-- Sorting Arrows, hidden by default -->
+                  <span class="sort-arrow up hidden">▲</span>
+                  <span class="sort-arrow down hidden">▼</span>
+                </th>
               {% endfor %}
-              <th class="py-2 px-4 text-left text-white bg-gray-800">Count</th>
-              <th class="py-2 px-4 text-left text-white bg-gray-800">Percentage</th>
+              <th class="py-2 px-4 text-left text-white bg-gray-800 cursor-pointer"
+                  onclick="sortTableByColumn('groupingTable', {{ header_list|length }})">
+                Count
+                <span class="sort-arrow up hidden">▲</span>
+                <span class="sort-arrow down hidden">▼</span>
+              </th>
+              <th class="py-2 px-4 text-left text-white bg-gray-800 cursor-pointer"
+                  onclick="sortTableByColumn('groupingTable', {{ header_list|length|add:1 }})">
+                Percentage
+                <span class="sort-arrow up hidden">▲</span>
+                <span class="sort-arrow down hidden">▼</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -171,19 +196,23 @@
   </div>
 </div>
 
-<!-- [CHANGED] Load Chart.js, then the Word Cloud plugin -->
+<!-- Chart.js and Word Cloud plugin -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-wordcloud"></script>
-<!-- [/CHANGED] -->
+<!-- Cytoscape -->
 <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+
+<!-- jsPDF + AutoTable + SheetJS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
 <script>
 "use strict";
 
-// Use a default empty array if groups_json is not provided.
 const groups = {{ groups_json|default:"[]"|safe }};
 
-// --- Loading Indicator Functions ---
+// --- Loading Indicator ---
 function showLoading() {
   document.getElementById("loadingIndicator").classList.remove("hidden");
 }
@@ -194,13 +223,13 @@ function hideLoading() {
 function updatePageSize() {
   const select = document.getElementById("pageSizeSelect");
   const pageSize = select.value;
-  // Update the URL query parameter for page_size and reset to page 1.
   const url = new URL(window.location.href);
   url.searchParams.set('page_size', pageSize);
   url.searchParams.delete('page');
   window.location.href = url.toString();
 }
 
+// Expand/Collapse table sub-nodes
 function toggleGroup(event, groupId, childSelector) {
   event.stopPropagation();
   const children = document.querySelectorAll(childSelector);
@@ -220,6 +249,7 @@ function collapseAllNodes() {
   document.querySelectorAll("[id^='icon-']").forEach(icon => icon.classList.remove("rotate-90"));
 }
 
+// Exports
 function downloadCSV() {
   const rows = document.querySelectorAll("#groupingTable tr");
   const csv = [];
@@ -263,10 +293,60 @@ function printReport() {
   win.close();
 }
 
-// --- Modified Filtering with Progress Feedback ---
-function applyDynamicFilters() {
-  showLoading(); // Show loading indicator at start.
+// --- [SheetJS + jsPDF-AutoTable Exports] ---
+function exportTableToExcel() {
+  const table = document.getElementById("groupingTable");
+  const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+  XLSX.writeFile(wb, "grouping_report.xlsx");
+}
 
+function exportTableToPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'pt', 'letter');
+
+  const table = document.getElementById("groupingTable");
+  const sortedIndex = parseInt(table.getAttribute('data-sorted-column-index') || '-1', 10);
+  const sortDirection = table.getAttribute('data-sort-direction') || '';
+
+  // gather headers
+  const rawHeaders = Array.from(table.querySelectorAll("thead th"));
+  const headers = rawHeaders.map((th, i) => {
+    let text = th.textContent.trim();
+    if (i === sortedIndex && sortDirection) {
+      text += sortDirection === 'asc' ? ' ↑' : ' ↓';
+    }
+    return text;
+  });
+
+  // gather row data
+  const rowData = [];
+  table.querySelectorAll("tbody tr").forEach(tr => {
+    const cells = Array.from(tr.querySelectorAll("td")).map(td => td.textContent.trim());
+    rowData.push(cells);
+  });
+
+  doc.autoTable({
+    head: [headers],
+    body: rowData,
+    startY: 20,
+    margin: { left: 20, right: 20 },
+    styles: {
+      fontSize: 8,
+      cellPadding: 4
+    },
+    headStyles: {
+      fillColor: [128, 128, 128],
+      textColor: 255,
+      fontStyle: 'bold'
+    }
+  });
+
+  doc.save("grouping_report.pdf");
+}
+
+// --- Filtering ---
+function applyDynamicFilters() {
+  showLoading();
   const filters = {
     {% for header in header_list %}
       "{{ header }}": document.getElementById("{{ header }}Filter").value.toLowerCase(),
@@ -286,10 +366,10 @@ function applyDynamicFilters() {
     {% endfor %}
     row.style.display = visible ? "" : "none";
   });
-
-  hideLoading(); // Hide loading indicator when done.
+  hideLoading();
 }
 
+// --- Chart init ---
 let groupingChart;
 function initChart(chartType = "bar") {
   const canvas = document.getElementById("groupingChart");
@@ -312,7 +392,6 @@ function initChart(chartType = "bar") {
   ];
   const colors = groups.map((g, i) => g.colour || defaultColors[i % defaultColors.length]);
 
-  // [ADDED] For "wordCloud", we set up a different config
   if (chartType === "wordCloud") {
     groupingChart = new Chart(ctx, {
       type: "wordCloud",
@@ -328,16 +407,12 @@ function initChart(chartType = "bar") {
         plugins: {
           legend: { display: false },
           title: { display: true, text: "{{ report_name }}" }
-        },
-        // Additional word cloud options can go here:
-        // e.g., getWordColor, getWordRotation, etc.
+        }
       }
     });
     return;
   }
-  // [/ADDED]
 
-  // Default case for standard charts (bar, pie, line, etc.)
   groupingChart = new Chart(ctx, {
     type: chartType,
     data: {
@@ -383,6 +458,7 @@ function changeChartType() {
   }
 }
 
+// Toggle Filters
 function toggleFilterPanel() {
   const panel = document.getElementById("filterPanel");
   const icon = document.getElementById("filterIcon");
@@ -402,25 +478,25 @@ function toggleFilterPanel() {
   }
 }
 
-// === Initialize the default chart and collapse table sub-nodes on load ===
+// Initialize default chart & collapse sub-nodes
 document.addEventListener("DOMContentLoaded", () => {
   initChart();
   collapseAllNodes();
+
+  // [ADDED] Force an initial sort on column 0 so arrow is visible on page load
+  sortTableByColumn('groupingTable', 0);
 });
 
-// === Node Graph function ===
+// Node Graph
 function initNodeGraphFromTable() {
   const container = document.getElementById("nodeGraphContainer");
   const cyDiv = document.getElementById("cy");
 
-  // If there's a previous instance, destroy it
   if (cyDiv._cyInstance) {
     cyDiv._cyInstance.destroy();
   }
-
   container.classList.remove("hidden");
 
-  // Build node graph elements from groups
   const nodes = [];
   const edges = [];
   const added = new Set();
@@ -439,7 +515,7 @@ function initNodeGraphFromTable() {
     }
   });
 
-  // Optional: connect them in a simple chain for demonstration
+  // Optional: connect them in a simple chain
   for (let i = 0; i < nodes.length - 1; i++) {
     edges.push({
       data: {
@@ -450,7 +526,6 @@ function initNodeGraphFromTable() {
     });
   }
 
-  // Initialize Cytoscape
   const cy = cytoscape({
     container: cyDiv,
     elements: [...nodes, ...edges],
@@ -487,14 +562,71 @@ function initNodeGraphFromTable() {
     }
   });
 
-  // Keep a reference so we can destroy or re-layout later if needed
   cyDiv._cyInstance = cy;
+}
+
+// [MODIFIED] Sort & store column index/direction
+function sortTableByColumn(tableId, colIndex) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+
+  const tBody = table.querySelector('tbody');
+  if (!tBody) return;
+
+  let rows = Array.from(tBody.querySelectorAll('tr'));
+
+  // Toggle sort direction
+  let sortDirection = table.getAttribute('data-sort-direction') === 'asc' ? 'desc' : 'asc';
+  table.setAttribute('data-sort-direction', sortDirection);
+
+  // Store which column is sorted
+  table.setAttribute('data-sorted-column-index', colIndex);
+
+  // Detect if the column is numeric
+  const firstCell = rows[0]?.querySelectorAll('td')[colIndex];
+  const isNumeric = firstCell && !isNaN(parseFloat(firstCell.textContent));
+
+  rows.sort((a, b) => {
+    const aCell = a.querySelectorAll('td')[colIndex]?.textContent.trim() || "";
+    const bCell = b.querySelectorAll('td')[colIndex]?.textContent.trim() || "";
+
+    if (isNumeric) {
+      return (parseFloat(aCell) - parseFloat(bCell)) * (sortDirection === 'asc' ? 1 : -1);
+    } else {
+      return aCell.localeCompare(bCell) * (sortDirection === 'asc' ? 1 : -1);
+    }
+  });
+
+  rows.forEach(row => tBody.appendChild(row));
+
+  // Hide all arrows, then show the correct arrow for this column/direction
+  const allArrows = table.querySelectorAll('thead th .sort-arrow');
+  allArrows.forEach(arrow => arrow.classList.add('hidden'));
+
+  const headers = table.querySelectorAll('thead th');
+  const currentHeader = headers[colIndex];
+  if (!currentHeader) return;
+
+  const upArrow = currentHeader.querySelector('.sort-arrow.up');
+  const downArrow = currentHeader.querySelector('.sort-arrow.down');
+
+  if (sortDirection === 'asc' && upArrow) {
+    upArrow.classList.remove('hidden');
+  } else if (sortDirection === 'desc' && downArrow) {
+    downArrow.classList.remove('hidden');
+  }
 }
 </script>
 
 <style>
   .rotate-90 { transform: rotate(90deg); }
   .hidden { display: none !important; }
+  /* Sticky header */
+  #groupingTable thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
 </style>
 
 {% endblock %}
