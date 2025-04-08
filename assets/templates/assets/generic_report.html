@@ -22,6 +22,10 @@
       <option value="doughnut">Doughnut</option>
       <option value="radar">Radar</option>
       <option value="polarArea">Polar Area</option>
+      <option value="nodegraph">Node Graph</option>
+      <!-- [ADDED] -->
+      <option value="wordCloud">Word Cloud</option>
+      <!-- [/ADDED] -->
     </select>
   </div>
 
@@ -108,6 +112,11 @@
     </div>
   </div>
 
+  <!-- Node Graph Section -->
+  <div id="nodeGraphContainer" class="w-[80%] h-[75vh] mx-auto hidden">
+    <div id="cy" class="w-full h-full rounded-xl shadow border border-gray-100"></div>
+  </div>
+
   <!-- Report Table -->
   <div id="reportContainer">
     <div class="relative">
@@ -131,220 +140,356 @@
       </div>
     </div>
     
-<!-- Enhanced Pagination Controls -->
-<div class="pagination mt-6 flex justify-center items-center space-x-2">
-  {% with request.GET.page_size as ps %}
-    {% with request.GET.tree_view as tv %}
-      {% if groups.has_previous %}
-        <a href="?page={{ groups.previous_page_number }}{% if ps %}&page_size={{ ps }}{% endif %}{% if tv %}&tree_view={{ tv }}{% endif %}"
-           class="px-4 py-2 bg-gray-50 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-          ← Previous
-        </a>
-      {% else %}
-        <span class="px-4 py-2 text-gray-400 border border-gray-200 rounded-md">← Previous</span>
-      {% endif %}
+    <!-- Enhanced Pagination Controls -->
+    <div class="pagination mt-6 flex justify-center items-center space-x-2">
+      {% with request.GET.page_size as ps %}
+        {% with request.GET.tree_view as tv %}
+          {% if groups.has_previous %}
+            <a href="?page={{ groups.previous_page_number }}{% if ps %}&page_size={{ ps }}{% endif %}{% if tv %}&tree_view={{ tv }}{% endif %}"
+               class="px-4 py-2 bg-gray-50 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+              ← Previous
+            </a>
+          {% else %}
+            <span class="px-4 py-2 text-gray-400 border border-gray-200 rounded-md">← Previous</span>
+          {% endif %}
 
-      <span class="px-4 py-2 text-gray-700">
-        Page {{ groups.number }} of {{ groups.paginator.num_pages }}
-      </span>
+          <span class="px-4 py-2 text-gray-700">
+            Page {{ groups.number }} of {{ groups.paginator.num_pages }}
+          </span>
 
-      {% if groups.has_next %}
-        <a href="?page={{ groups.next_page_number }}{% if ps %}&page_size={{ ps }}{% endif %}{% if tv %}&tree_view={{ tv }}{% endif %}"
-           class="px-4 py-2 bg-gray-50 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-          Next →
-        </a>
-      {% else %}
-        <span class="px-4 py-2 text-gray-400 border border-gray-200 rounded-md">Next →</span>
-      {% endif %}
-    {% endwith %}
-  {% endwith %}
+          {% if groups.has_next %}
+            <a href="?page={{ groups.next_page_number }}{% if ps %}&page_size={{ ps }}{% endif %}{% if tv %}&tree_view={{ tv }}{% endif %}"
+               class="px-4 py-2 bg-gray-50 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+              Next →
+            </a>
+          {% else %}
+            <span class="px-4 py-2 text-gray-400 border border-gray-200 rounded-md">Next →</span>
+          {% endif %}
+        {% endwith %}
+      {% endwith %}
+    </div>
+  </div>
 </div>
 
+<!-- [CHANGED] Load Chart.js, then the Word Cloud plugin -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-wordcloud"></script>
+<!-- [/CHANGED] -->
+<script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+
 <script>
-  "use strict";
-  // Use a default empty array if groups_json is not provided.
-  const groups = {{ groups_json|default:"[]"|safe }};
+"use strict";
 
-  // --- Loading Indicator Functions ---
-  function showLoading() {
-    document.getElementById("loadingIndicator").classList.remove("hidden");
-  }
-  function hideLoading() {
-    document.getElementById("loadingIndicator").classList.add("hidden");
-  }
+// Use a default empty array if groups_json is not provided.
+const groups = {{ groups_json|default:"[]"|safe }};
 
-  function updatePageSize() {
-    const select = document.getElementById("pageSizeSelect");
-    const pageSize = select.value;
-    // Update the URL query parameter for page_size and reset to page 1.
-    const url = new URL(window.location.href);
-    url.searchParams.set('page_size', pageSize);
-    url.searchParams.delete('page');
-    window.location.href = url.toString();
-  }
+// --- Loading Indicator Functions ---
+function showLoading() {
+  document.getElementById("loadingIndicator").classList.remove("hidden");
+}
+function hideLoading() {
+  document.getElementById("loadingIndicator").classList.add("hidden");
+}
 
-  function toggleGroup(event, groupId, childSelector) {
-    event.stopPropagation();
-    const children = document.querySelectorAll(childSelector);
-    const icon = document.getElementById("icon-" + groupId);
-    let collapsing = Array.from(children).some(child => !child.classList.contains("hidden"));
-    children.forEach(child => child.classList.toggle("hidden", collapsing));
-    if (icon) icon.classList.toggle("rotate-90", !collapsing);
-  }
+function updatePageSize() {
+  const select = document.getElementById("pageSizeSelect");
+  const pageSize = select.value;
+  // Update the URL query parameter for page_size and reset to page 1.
+  const url = new URL(window.location.href);
+  url.searchParams.set('page_size', pageSize);
+  url.searchParams.delete('page');
+  window.location.href = url.toString();
+}
 
-  function expandAllNodes() {
-    document.querySelectorAll("[class*='child-of-']").forEach(el => el.classList.remove("hidden"));
-    document.querySelectorAll("[id^='icon-']").forEach(icon => icon.classList.add("rotate-90"));
-  }
+function toggleGroup(event, groupId, childSelector) {
+  event.stopPropagation();
+  const children = document.querySelectorAll(childSelector);
+  const icon = document.getElementById("icon-" + groupId);
+  let collapsing = Array.from(children).some(child => !child.classList.contains("hidden"));
+  children.forEach(child => child.classList.toggle("hidden", collapsing));
+  if (icon) icon.classList.toggle("rotate-90", !collapsing);
+}
 
-  function collapseAllNodes() {
-    document.querySelectorAll("[class*='child-of-']").forEach(el => el.classList.add("hidden"));
-    document.querySelectorAll("[id^='icon-']").forEach(icon => icon.classList.remove("rotate-90"));
-  }
+function expandAllNodes() {
+  document.querySelectorAll("[class*='child-of-']").forEach(el => el.classList.remove("hidden"));
+  document.querySelectorAll("[id^='icon-']").forEach(icon => icon.classList.add("rotate-90"));
+}
 
-  function downloadCSV() {
-    const rows = document.querySelectorAll("#groupingTable tr");
-    const csv = [];
-    rows.forEach(row => {
-      const cells = Array.from(row.querySelectorAll("td, th")).map(cell => `"${cell.textContent.trim()}"`);
-      if (cells.length) csv.push(cells.join(","));
-    });
-    const blob = new Blob([csv.join("\n")], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "grouping_report.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+function collapseAllNodes() {
+  document.querySelectorAll("[class*='child-of-']").forEach(el => el.classList.add("hidden"));
+  document.querySelectorAll("[id^='icon-']").forEach(icon => icon.classList.remove("rotate-90"));
+}
 
-  function downloadJSON() {
-    const blob = new Blob([JSON.stringify(groups, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "grouping_report.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+function downloadCSV() {
+  const rows = document.querySelectorAll("#groupingTable tr");
+  const csv = [];
+  rows.forEach(row => {
+    const cells = Array.from(row.querySelectorAll("td, th")).map(cell => `"${cell.textContent.trim()}"`);
+    if (cells.length) csv.push(cells.join(","));
+  });
+  const blob = new Blob([csv.join("\n")], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "grouping_report.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
-  function printReport() {
-    const content = document.getElementById("reportContainer").cloneNode(true);
-    const win = window.open("", "Print Report", "height=600,width=800");
-    win.document.write("<html><head><title>Print Report</title><style>");
-    win.document.write("body { font-family: sans-serif; margin: 20px; }");
-    win.document.write("table { width: 100%; border-collapse: collapse; }");
-    win.document.write("th, td { border: 1px solid #ddd; padding: 8px; }");
-    win.document.write("th { background: #333; color: #fff; }");
-    win.document.write("</style></head><body>");
-    win.document.body.appendChild(content);
-    win.document.write("</body></html>");
-    win.document.close();
-    win.focus();
-    win.print();
-    win.close();
-  }
+function downloadJSON() {
+  const blob = new Blob([JSON.stringify(groups, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "grouping_report.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
-  // --- Modified Filtering with Progress Feedback ---
-  function applyDynamicFilters() {
-    showLoading(); // Show loading indicator at start.
-    
-    const filters = {
-      {% for header in header_list %}
-        "{{ header }}": document.getElementById("{{ header }}Filter").value.toLowerCase(),
-      {% endfor %}
-    };
+function printReport() {
+  const content = document.getElementById("reportContainer").cloneNode(true);
+  const win = window.open("", "Print Report", "height=600,width=800");
+  win.document.write("<html><head><title>Print Report</title><style>");
+  win.document.write("body { font-family: sans-serif; margin: 20px; }");
+  win.document.write("table { width: 100%; border-collapse: collapse; }");
+  win.document.write("th, td { border: 1px solid #ddd; padding: 8px; }");
+  win.document.write("th { background: #333; color: #fff; }");
+  win.document.write("</style></head><body>");
+  win.document.body.appendChild(content);
+  win.document.write("</body></html>");
+  win.document.close();
+  win.focus();
+  win.print();
+  win.close();
+}
 
-    const rows = document.querySelectorAll("#groupingTable tbody tr");
-    rows.forEach(row => {
-      let visible = true;
-      {% for header in header_list %}
-        {
-          const cell = row.querySelector(`td[data-header="{{ header }}"]`);
-          if (cell && filters["{{ header }}"] && !cell.textContent.toLowerCase().includes(filters["{{ header }}"])) {
-            visible = false;
-          }
+// --- Modified Filtering with Progress Feedback ---
+function applyDynamicFilters() {
+  showLoading(); // Show loading indicator at start.
+
+  const filters = {
+    {% for header in header_list %}
+      "{{ header }}": document.getElementById("{{ header }}Filter").value.toLowerCase(),
+    {% endfor %}
+  };
+
+  const rows = document.querySelectorAll("#groupingTable tbody tr");
+  rows.forEach(row => {
+    let visible = true;
+    {% for header in header_list %}
+      {
+        const cell = row.querySelector(`td[data-header="{{ header }}"]`);
+        if (cell && filters["{{ header }}"] && !cell.textContent.toLowerCase().includes(filters["{{ header }}"])) {
+          visible = false;
         }
-      {% endfor %}
-      row.style.display = visible ? "" : "none";
-    });
-    
-    hideLoading(); // Hide loading indicator when done.
+      }
+    {% endfor %}
+    row.style.display = visible ? "" : "none";
+  });
+
+  hideLoading(); // Hide loading indicator when done.
+}
+
+let groupingChart;
+function initChart(chartType = "bar") {
+  const canvas = document.getElementById("groupingChart");
+  if (!canvas) {
+    console.error("Canvas element with id 'groupingChart' not found.");
+    return;
+  }
+  const ctx = canvas.getContext("2d");
+
+  if (typeof Chart === 'undefined') {
+    console.error("Chart.js is not loaded.");
+    return;
   }
 
-  let groupingChart;
-  function initChart(chartType = "bar") {
-    const canvas = document.getElementById("groupingChart");
-    if (!canvas) {
-      console.error("Canvas element with id 'groupingChart' not found.");
-      return;
-    }
-    const ctx = canvas.getContext("2d");
+  const labels = groups.map(g => g.value || "(Not Available)");
+  const counts = groups.map(g => g.count || 0);
+  const defaultColors = [
+    '#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd',
+    '#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf'
+  ];
+  const colors = groups.map((g, i) => g.colour || defaultColors[i % defaultColors.length]);
 
-    if (typeof Chart === 'undefined') {
-      console.error("Chart.js is not loaded.");
-      return;
-    }
-
-    const labels = groups.map(g => g.value || "(Not Available)");
-    const counts = groups.map(g => g.count || 0);
-    const defaultColors = ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf'];
-    const colors = groups.map((g, i) => g.colour || defaultColors[i % defaultColors.length]);
-
+  // [ADDED] For "wordCloud", we set up a different config
+  if (chartType === "wordCloud") {
     groupingChart = new Chart(ctx, {
-      type: chartType,
+      type: "wordCloud",
       data: {
         labels: labels,
         datasets: [{
-          label: "Count",
-          data: counts,
-          backgroundColor: colors
+          data: counts
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: "top" },
-          title: { display: true, text: "{{report_name}}" }
+          legend: { display: false },
+          title: { display: true, text: "{{ report_name }}" }
         },
-        scales: {
-          y: { beginAtZero: true, title: { display: true, text: "Count" } }
+        // Additional word cloud options can go here:
+        // e.g., getWordColor, getWordRotation, etc.
+      }
+    });
+    return;
+  }
+  // [/ADDED]
+
+  // Default case for standard charts (bar, pie, line, etc.)
+  groupingChart = new Chart(ctx, {
+    type: chartType,
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Count",
+        data: counts,
+        backgroundColor: colors
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: "top" },
+        title: { display: true, text: "{{ report_name }}" }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: "Count" }
         }
+      }
+    }
+  });
+}
+
+function changeChartType() {
+  const type = document.getElementById("chartTypeSelect").value;
+  const chartCanvas = document.getElementById("groupingChart").parentElement;
+  const nodeGraph = document.getElementById("nodeGraphContainer");
+
+  if (groupingChart) groupingChart.destroy();
+
+  if (type === "nodegraph") {
+    chartCanvas.classList.add("hidden");
+    nodeGraph.classList.remove("hidden");
+    initNodeGraphFromTable();
+  } else {
+    nodeGraph.classList.add("hidden");
+    chartCanvas.classList.remove("hidden");
+    initChart(type);
+  }
+}
+
+function toggleFilterPanel() {
+  const panel = document.getElementById("filterPanel");
+  const icon = document.getElementById("filterIcon");
+  const button = document.getElementById("filterToggleButton");
+
+  const isVisible = !panel.classList.contains("hidden");
+  panel.classList.toggle("hidden");
+
+  if (isVisible) {
+    icon.classList.remove("fa-filter-circle-xmark", "text-blue-600");
+    icon.classList.add("fa-filter");
+    button.classList.remove("bg-blue-100", "border", "border-blue-300");
+  } else {
+    icon.classList.remove("fa-filter");
+    icon.classList.add("fa-filter-circle-xmark", "text-blue-600");
+    button.classList.add("bg-blue-100", "border", "border-blue-300");
+  }
+}
+
+// === Initialize the default chart and collapse table sub-nodes on load ===
+document.addEventListener("DOMContentLoaded", () => {
+  initChart();
+  collapseAllNodes();
+});
+
+// === Node Graph function ===
+function initNodeGraphFromTable() {
+  const container = document.getElementById("nodeGraphContainer");
+  const cyDiv = document.getElementById("cy");
+
+  // If there's a previous instance, destroy it
+  if (cyDiv._cyInstance) {
+    cyDiv._cyInstance.destroy();
+  }
+
+  container.classList.remove("hidden");
+
+  // Build node graph elements from groups
+  const nodes = [];
+  const edges = [];
+  const added = new Set();
+
+  if (!Array.isArray(groups) || groups.length === 0) {
+    console.warn("No groups available to render in node graph.");
+    return;
+  }
+
+  // Create one node per group
+  groups.forEach((group, idx) => {
+    const id = group.value || `node${idx}`;
+    if (!added.has(id)) {
+      added.add(id);
+      nodes.push({ data: { id, label: id } });
+    }
+  });
+
+  // Optional: connect them in a simple chain for demonstration
+  for (let i = 0; i < nodes.length - 1; i++) {
+    edges.push({
+      data: {
+        id: nodes[i].data.id + "_" + nodes[i+1].data.id,
+        source: nodes[i].data.id,
+        target: nodes[i+1].data.id
       }
     });
   }
 
-  function changeChartType() {
-    const newType = document.getElementById("chartTypeSelect").value;
-    if (groupingChart) groupingChart.destroy();
-    initChart(newType);
-  }
-
-  function toggleFilterPanel() {
-    const panel = document.getElementById("filterPanel");
-    const icon = document.getElementById("filterIcon");
-    const button = document.getElementById("filterToggleButton");
-
-    const isVisible = !panel.classList.contains("hidden");
-    panel.classList.toggle("hidden");
-
-    if (isVisible) {
-      icon.classList.remove("fa-filter-circle-xmark", "text-blue-600");
-      icon.classList.add("fa-filter");
-      button.classList.remove("bg-blue-100", "border", "border-blue-300");
-    } else {
-      icon.classList.remove("fa-filter");
-      icon.classList.add("fa-filter-circle-xmark", "text-blue-600");
-      button.classList.add("bg-blue-100", "border", "border-blue-300");
+  // Initialize Cytoscape
+  const cy = cytoscape({
+    container: cyDiv,
+    elements: [...nodes, ...edges],
+    style: [
+      {
+        selector: 'node',
+        style: {
+          'background-color': '#6366F1',
+          'label': 'data(label)',
+          'color': '#fff',
+          'text-valign': 'center',
+          'text-halign': 'center',
+          'font-size': '11px',
+          'width': '40px',
+          'height': '40px',
+          'border-width': 2,
+          'border-color': '#E0E7FF'
+        }
+      },
+      {
+        selector: 'edge',
+        style: {
+          'width': 1.5,
+          'line-color': '#CBD5E1',
+          'target-arrow-color': '#CBD5E1',
+          'target-arrow-shape': 'triangle',
+          'curve-style': 'bezier'
+        }
+      }
+    ],
+    layout: {
+      name: 'cose',
+      padding: 10
     }
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    initChart();
-    collapseAllNodes();
   });
+
+  // Keep a reference so we can destroy or re-layout later if needed
+  cyDiv._cyInstance = cy;
+}
 </script>
 
 <style>
