@@ -10,25 +10,12 @@ import time
 import ipaddress
 import concurrent.futures
 import jwt
+from .api_client import ApiClient
 
 
-class MSGraphClient:
-    """
-    A generic class to interact with Microsoft Graph API endpoints using msal for authentication.
-    Handles token expiration and automatic renewal.
-    """
-    def __init__(self, tenant_id, client_id, client_secret, baseline):
-        """
-        Initialize the client with tenant ID, client ID, and client secret.
-        
-        :param tenant_id: The Azure AD tenant ID.
-        :param client_id: The Azure AD application (client) ID.
-        :param client_secret: The client secret for the application.
-        """
-        self.tenant_id = tenant_id
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.scopes = ["https://graph.microsoft.com/.default"]
+class MSGraphClient(ApiClient):
+    def __init__(self, tenant_id, client_id, client_secret, baseline="1.0"):
+        super().__init__(tenant_id, client_id, client_secret)
         self.baseline = baseline
         self.token = None
         self.token_expiration = 0  # Timestamp of token expiration in seconds
@@ -42,209 +29,6 @@ class MSGraphClient:
         self.access_token = self.get_access_token()
 
 
-    def get_access_token(self):
-        """
-        Obtain an access token using msal and handle expiration.
-        Automatically refreshes the token if expired.
-        """
-        current_time = time.time()
-
-        # Check if the token is still valid
-        if self.token and current_time < self.token_expiration:
-            print("Using cached access token")
-            return self.token
-
-        # Acquire a new token
-        print("Acquiring new access token")
-        app = msal.ConfidentialClientApplication(
-            client_id=self.client_id,
-            authority=f"https://login.microsoftonline.com/{self.tenant_id}",
-            client_credential=self.client_secret,
-        )
-
-        token_response = app.acquire_token_for_client(scopes=self.scopes)
-
-        if "access_token" in token_response:
-            self.token = token_response["access_token"]
-
-            # Decode the token to get expiration time
-            decoded_token = jwt.decode(self.token, options={"verify_signature": False})
-            self.token_expiration = decoded_token.get('exp')
-
-            print(f"New access token acquired, expires at {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(self.token_expiration))}")
-            return self.token
-        else:
-            raise Exception(f"Could not obtain access token: {token_response.get('error_description')}")
-        
-        return results
-
-    def query_msgraph(self, base_url=None, params=None, max_retries=5, top=100, page_size=100):
-        headers = {
-            "Authorization": f"Bearer {self.get_access_token()}",
-            "Content-Type": "application/json"
-        }
-
-        results = []
-        retries = 0
-        next_link = None
-        old_link = None
-        records_retrieved = 0  # Keep track of how many records we've retrieved so far
-
-        if top:
-            params = params or {}
-            params['$top'] = top  # Add the top parameter to limit the records returned
-
-        while True:
-            if next_link:
-                url = next_link
-                params = None
-            else:
-                url = base_url
-
-            try:
-                response = self.session.get(url, headers=headers, params=params, timeout=10)
-                response.raise_for_status()
-                data = response.json()
-                new_records = data.get("value", [])
-                results.extend(new_records)
-                records_retrieved += len(new_records)
-                print(f"Retrieved {len(new_records)} records, total: {records_retrieved}")
-
-                # Stop fetching if we have reached the 'top' limit
-                if records_retrieved >= top:
-                    break
-
-                # Check for more pages if not reached 'top' yet
-                next_link = data.get("@odata.nextLink")
-                if not next_link or old_link == next_link:
-                    break
-                old_link = next_link
-
-            except requests.exceptions.ChunkedEncodingError as e:
-                print("ChunkedEncodingError encountered. Retrying...")
-                retries += 1
-                if retries > max_retries:
-                    raise Exception(f"Max retries exceeded: {e}")
-                time.sleep(5)
-
-            except requests.exceptions.HTTPError as e:
-                if e.response.status_code == 429:
-                    retries += 1
-                    if retries > max_retries:
-                        raise Exception(f"Max retries exceeded: {e}")
-                    retry_after = int(e.response.headers.get("Retry-After", 10))
-                    print(f"Rate limit hit. Retrying in {retry_after} seconds. Retry #: {retries}")
-                    time.sleep(retry_after)
-                elif e.response.status_code == 400:
-                    print(f"Bad request error: {e}")
-                    break
-                elif e.response.status_code == 401:
-                    print("Token expired, refreshing...")
-                    access_token = self.get_access_token()
-                    headers["Authorization"] = f"Bearer {access_token}"
-                    continue
-                else:
-                    print(f"Error occurred: {e}")
-                    return results
-
-            except requests.exceptions.RequestException as e:
-                print(f"Request exception: {e}, retrying...")
-                retries += 1
-                if retries > max_retries:
-                    raise Exception(f"Max retries exceeded: {e}")
-                time.sleep(5)
-
-            except ProtocolError as e:
-                print(f"ProtocolError: {e}, retrying...")
-                retries += 1
-                if retries > max_retries:
-                    raise Exception(f"Max retries exceeded: {e}")
-                time.sleep(5)
-
-        # After all pages are retrieved (or stopped by 'top' limit), chunk the results if needed
-        if page_size:
-            results_chunked = [results[i:i + page_size] for i in range(0, len(results), page_size)]
-            return results_chunked  # Return chunked results
-
-        return results[:top]  # Return only the top number of records
-
-
-        
-    def query_msgraph_old1(self, base_url=None, params=None, max_retries=5):
-        headers = {
-            "Authorization": f"Bearer {self.get_access_token()}",
-            "Content-Type": "application/json"
-        }
-
-        results = []
-        retries = 0
-        next_link = None
-        old_link = None
-
-        while True:
-            if next_link:
-                url = next_link
-                params = None
-            else:
-                url = base_url
-
-            try:
-                response = self.session.get(url, headers=headers, params=params, timeout=10)  # Set timeout
-                response.raise_for_status()
-                data = response.json()
-                new_records = data.get("value", [])
-                results.extend(new_records)
-                print(f"Retrieved {len(new_records)} records, total: {len(results)}")
-                next_link = data.get("@odata.nextLink")
-
-                if not next_link or old_link == next_link:
-                    break
-                old_link = next_link
-
-            except requests.exceptions.ChunkedEncodingError as e:
-                print("ChunkedEncodingError encountered. Retrying...")
-                retries += 1
-                if retries > max_retries:
-                    raise Exception(f"Max retries exceeded: {e}")
-                time.sleep(5)  # Wait before retrying
-
-            except requests.exceptions.HTTPError as e:
-                if e.response.status_code == 429:  # Rate limit error
-                    retries += 1
-                    if retries > max_retries:
-                        raise Exception(f"Max retries exceeded: {e}")
-                    retry_after = int(e.response.headers.get("Retry-After", 10))
-                    print(f"Rate limit hit. Retrying in {retry_after} seconds. Retry #: {retries}")
-                    time.sleep(retry_after)
-                elif e.response.status_code == 400:
-                    print(f"Bad request error: {e}")
-                    break
-                elif e.response.status_code == 401:
-                    print("Token expired, refreshing...")
-                    access_token = self.get_access_token()
-                    headers["Authorization"] = f"Bearer {access_token}"
-                    continue
-                else:
-                    print(f"Error occurred: {e}")
-                    return results
-
-            except requests.exceptions.RequestException as e:
-                print(f"Request exception: {e}, retrying...")
-                retries += 1
-                if retries > max_retries:
-                    raise Exception(f"Max retries exceeded: {e}")
-                time.sleep(5)
-
-            except ProtocolError as e:
-                print(f"ProtocolError: {e}, retrying...")
-                retries += 1
-                if retries > max_retries:
-                    raise Exception(f"Max retries exceeded: {e}")
-                time.sleep(5)
-
-        return results
-
-        
     def query_sign_ins(self, email=None, start_date=None, end_date=None, app_display_name="Windows Sign In", ip_range=None, top=None, max_retries=5):
         """
         Query the sign-ins from Microsoft Graph API within the specified date range, filtering by appDisplayName.
@@ -535,7 +319,7 @@ class MSGraphClient:
             params["$top"] = top
             
         # Order by lastSyncDateTime in descending order to get the most recent record first
-        params["$orderby"] = "lastSyncDateTime desc"
+        #params["$orderby"] = "lastSyncDateTime desc"
 
         # Limit to only the top result (the most recent one)
         if top:
@@ -609,7 +393,7 @@ class MSGraphClient:
             params["$select"] = group_by_properties
 
         # Order by lastSyncDateTime in descending order to get the most recent record first
-        params["$orderby"] = "lastSyncDateTime desc"
+        #params["$orderby"] = "lastSyncDateTime desc"
 
         # Limit to only the top result (if specified)
         if top:

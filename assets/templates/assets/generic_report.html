@@ -131,25 +131,33 @@
       </div>
     </div>
     
-    <!-- Pagination Controls -->
-    <div class="pagination mt-6 flex justify-center items-center space-x-2">
+<!-- Enhanced Pagination Controls -->
+<div class="pagination mt-6 flex justify-center items-center space-x-2">
+  {% with request.GET.page_size as ps %}
+    {% with request.GET.tree_view as tv %}
       {% if groups.has_previous %}
-        <a href="?page={{ groups.previous_page_number }}" class="px-4 py-2 bg-gray-50 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
-          Previous
+        <a href="?page={{ groups.previous_page_number }}{% if ps %}&page_size={{ ps }}{% endif %}{% if tv %}&tree_view={{ tv }}{% endif %}"
+           class="px-4 py-2 bg-gray-50 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+          ← Previous
         </a>
+      {% else %}
+        <span class="px-4 py-2 text-gray-400 border border-gray-200 rounded-md">← Previous</span>
       {% endif %}
-  
+
       <span class="px-4 py-2 text-gray-700">
         Page {{ groups.number }} of {{ groups.paginator.num_pages }}
       </span>
-  
+
       {% if groups.has_next %}
-        <a href="?page={{ groups.next_page_number }}" class="px-4 py-2 bg-gray-50 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
-          Next
+        <a href="?page={{ groups.next_page_number }}{% if ps %}&page_size={{ ps }}{% endif %}{% if tv %}&tree_view={{ tv }}{% endif %}"
+           class="px-4 py-2 bg-gray-50 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+          Next →
         </a>
+      {% else %}
+        <span class="px-4 py-2 text-gray-400 border border-gray-200 rounded-md">Next →</span>
       {% endif %}
-    </div>
-  </div>
+    {% endwith %}
+  {% endwith %}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

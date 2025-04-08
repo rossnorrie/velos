@@ -178,10 +178,10 @@ def asset_ms_graph_asset_list(request, group_by_properties=None, header_text=Non
     # Reconstruct cleaned group_by_properties string
     cleaned_group_by_properties = ",".join(grouping_fields)
 
-    if not grouping_fields:
-        return render(request, 'assets/error_page.html', {
-            'error_message': 'No valid grouping fields provided.'
-        })
+    #if not grouping_fields:
+    #    return render(request, 'assets/error_page.html', {
+    #        'error_message': 'No valid grouping fields provided.'
+    #    })
 
     # Initialize your MSGraphClient
     client = ms_graph_toolkit.MSGraphClient(
@@ -196,7 +196,7 @@ def asset_ms_graph_asset_list(request, group_by_properties=None, header_text=Non
             email=None,
             start_date=None,
             end_date=None,
-            top=1000,
+            top=None,
             max_retries=None,
             group_by_properties=cleaned_group_by_properties
         )
@@ -264,10 +264,10 @@ def asset_ms_graph_asset_list_working(request, group_by_properties=None):
     # Reconstruct cleaned group_by_properties string
     cleaned_group_by_properties = ",".join(grouping_fields)
 
-    if not grouping_fields:
-        return render(request, 'assets/error_page.html', {
-            'error_message': 'No valid grouping fields provided.'
-        })
+    #if not grouping_fields:
+    #    return render(request, 'assets/error_page.html', {
+    #        'error_message': 'No valid grouping fields provided.'
+    #    })
 
     # Initialize your MSGraphClient
     client = ms_graph_toolkit.MSGraphClient(
@@ -282,7 +282,7 @@ def asset_ms_graph_asset_list_working(request, group_by_properties=None):
             email=None,
             start_date=None,
             end_date=None,
-            top=1000,
+            top=None,
             max_retries=None,
             group_by_properties=cleaned_group_by_properties
         )
@@ -381,78 +381,7 @@ def add_icon_and_colour(groups):
 
     return groups
         
-def asset_ms_graph_asset_list2(request):
-    group_by_properties = 'manufacturer, model'
-    
-    client = ms_graph_toolkit.MSGraphClient(
-        tenant_id="42fd9015-de4d-4223-a368-baeacab48927",
-        client_id="2bc1c9b9-d0ad-4ff1-ac90-f5f54f942efb",
-        client_secret="o5B8Q~XnkYM_BFpZ3anY~5lzrSiVqqGW3P_60br1",
-        baseline="1"
-    )
 
-    try:
-        devices = client.query_devices_extended(
-            email=None,
-            start_date=None,
-            end_date=None,
-            top=1000,
-            max_retries=None,
-            group_by_properties=group_by_properties
-        )
-
-        # Debugging: print devices to check if data is correctly fetched
-        print(devices)
-
-        if not devices:  # Check if no devices were returned
-            print("No devices found")  # Debugging
-            return render(request, 'assets/error_page.html', {
-                'error_message': 'No devices found.'
-            })
-
-        def add_icon_and_colour(groups):
-            """
-            Recursively injects icon and colour values into each group.
-            """
-            for group in groups:
-                group_by = group.get("group_by", "")
-                value = (group.get("value") or "").strip().lower()
-                if group_by == "operatingSystem":
-                    if value == "windows":
-                        group["icon"] = "fab fa-windows"
-                        group["colour"] = "#1f77b4"
-                    elif value == "macos":
-                        group["icon"] = "fab fa-apple"
-                        group["colour"] = "#d62728"
-                    else:
-                        group["icon"] = "fas fa-question-circle"
-                        group["colour"] = "#8c564b"
-                elif group_by == "osVersion":
-                    group["icon"] = "fas fa-desktop"
-                    group["colour"] = "#ff7f0e"
-                # Process sub-groups recursively if present
-                if group.get("sub_groups"):
-                    add_icon_and_colour(group["sub_groups"])
-            return groups
-
-        # Add icon and colour info to the grouping data.
-        devices = add_icon_and_colour(devices)
-
-        # Check the data after adding icons/colors
-        print(devices)  # Debugging
-
-        header_list = [h.strip() for h in group_by_properties.split(",")]
-
-        return render(request, 'assets/generic_report.html', {
-            'groups': devices,
-            'header_list': header_list,
-        })
-    
-    except Exception as e:
-        print(f"Error: {e}")  # Log the error
-        return render(request, 'assets/error_page.html', {
-            'error_message': 'An error occurred while fetching the devices.'
-        })
 
 
 @login_required
