@@ -2,11 +2,9 @@
 {% load static %}
 {% block content %}
 
-<!-- Loading Indicator (hidden by default) -->
+<!-- Loading Indicator -->
 <div id="loadingIndicator" class="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 hidden z-50">
-  <div class="text-white text-lg font-semibold">
-    Loading...
-  </div>
+  <div class="text-white text-lg font-semibold">Loading...</div>
 </div>
 
 <!-- Toolbar Section -->
@@ -27,7 +25,7 @@
     </select>
   </div>
 
-  <!-- Page Size Selector (using the same methodology as filters) -->
+  <!-- Page Size Selector -->
   <div class="flex items-center space-x-1">
     <label for="pageSizeSelect" class="sr-only">Page Size</label>
     <i class="fas fa-list-ol text-xl text-gray-700"></i>
@@ -61,12 +59,7 @@
   <a href="javascript:void(0)" onclick="downloadJSON()" title="Export JSON" class="text-gray-700 hover:text-gray-900">
     <i class="fas fa-file-code text-xl"></i>
   </a>
-  <a href="javascript:void(0)" onclick="printReport()" title="Print Report" class="text-gray-700 hover:text-gray-900">
-    <i class="fas fa-print text-xl"></i>
-  </a>
 
-  <!-- Extra Export Buttons -->
-  <div class="border-l h-5 border-gray-300 mx-2"></div>
   <a href="javascript:void(0)" onclick="exportTableToExcel()" title="Export Excel" class="text-gray-700 hover:text-gray-900">
     <i class="fas fa-file-excel text-xl"></i>
   </a>
@@ -76,14 +69,19 @@
 
   <!-- Separator -->
   <div class="border-l h-5 border-gray-300 mx-2"></div>
+  <a href="javascript:void(0)" onclick="printReport()" title="Print Report" class="text-gray-700 hover:text-gray-900">
+    <i class="fas fa-print text-xl"></i>
+  </a>
 
+  <!-- Separator -->
+  <div class="border-l h-5 border-gray-300 mx-2"></div>
   <!-- Expand/Collapse Filters -->
   <a href="javascript:void(0)" id="filterToggleButton" onclick="toggleFilterPanel()" title="Show/Hide Filters" class="text-gray-700 hover:text-gray-900 relative p-2 rounded transition">
     <i id="filterIcon" class="fas fa-filter text-xl"></i>
   </a>
 </div>
 
-<!-- Filter Panel (Initially Hidden) -->
+<!-- Filter Panel -->
 <div id="filterPanel" class="hidden bg-gray-50 p-4 rounded-b shadow border border-t-0 border-gray-200 mb-6">
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
     {% for header in header_list %}
@@ -91,22 +89,22 @@
         <label for="{{ header }}Filter" class="block text-sm font-medium text-gray-700">
           Filter by {{ header|capfirst }}
         </label>
-        <input type="text" id="{{ header }}Filter" name="{{ header }}Filter" placeholder="Enter value..." class="w-full border border-gray-300 rounded px-2 py-1 mt-1" />
+        <input type="text" id="{{ header }}Filter" name="{{ header }}Filter" placeholder="Enter value..."
+               class="w-full border border-gray-300 rounded px-2 py-1 mt-1" />
       </div>
     {% endfor %}
   </div>
-  <!-- Action Buttons -->
   <div class="flex justify-end space-x-2">
     <button onclick="applyDynamicFilters()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
-      <i class="{{report_icon}} mr-1"></i> Apply
+      <i class="{{ report_icon }} mr-1"></i> Apply
     </button>
   </div>
 </div>
 
 <div class="w-full py-6">
   <h2 class="text-3xl font-bold mb-6 flex items-center">
-    <i class="{{report_icon}} text-4xl mr-3"></i>
-     {{ report_name|default:"Grouping Report" }}
+    <i class="{{ report_icon }} text-4xl mr-3"></i>
+    {{ report_name|default:"Grouping Report" }}
   </h2>
   <h3 class="w-[70%] text-sm mb-6">
     {{ report_description|default:"Grouping Report" }}
@@ -128,7 +126,6 @@
   <div id="reportContainer">
     <div class="relative">
       <div class="overflow-x-auto border border-gray-200 rounded-lg">
-        <!-- [NOTE] By default, sorted ascending on column 0 -->
         <table id="groupingTable" class="min-w-full bg-white"
                data-sort-direction="asc" data-sorted-column-index="0">
           <thead>
@@ -137,7 +134,6 @@
                 <th class="py-2 px-4 text-left text-white bg-gray-800 cursor-pointer"
                     onclick="sortTableByColumn('groupingTable', {{ forloop.counter0 }})">
                   {{ header|capfirst }}
-                  <!-- Sorting Arrows, hidden by default -->
                   <span class="sort-arrow up hidden">▲</span>
                   <span class="sort-arrow down hidden">▼</span>
                 </th>
@@ -158,14 +154,15 @@
           </thead>
           <tbody>
             {% for group in groups %}
-              {% include "assets/grouping_row.html" with group=group level=0 parent_path="" header_list=header_list %}
+              {# Render each top-level group (level=0, no parent_id) #}
+              {% include "assets/grouping_row_ext.html" with group=group parent_id="" level=0 header_list=header_list %}
             {% endfor %}
-          </tbody>          
+          </tbody>  
         </table>
       </div>
     </div>
     
-    <!-- Enhanced Pagination Controls -->
+    <!-- Pagination Controls -->
     <div class="pagination mt-6 flex justify-center items-center space-x-2">
       {% with request.GET.page_size as ps %}
         {% with request.GET.tree_view as tv %}
@@ -177,11 +174,9 @@
           {% else %}
             <span class="px-4 py-2 text-gray-400 border border-gray-200 rounded-md">← Previous</span>
           {% endif %}
-
           <span class="px-4 py-2 text-gray-700">
             Page {{ groups.number }} of {{ groups.paginator.num_pages }}
           </span>
-
           {% if groups.has_next %}
             <a href="?page={{ groups.next_page_number }}{% if ps %}&page_size={{ ps }}{% endif %}{% if tv %}&tree_view={{ tv }}{% endif %}"
                class="px-4 py-2 bg-gray-50 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
@@ -196,13 +191,10 @@
   </div>
 </div>
 
-<!-- Chart.js and Word Cloud plugin -->
+<!-- Include External Libraries -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-wordcloud"></script>
-<!-- Cytoscape -->
 <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
-
-<!-- jsPDF + AutoTable + SheetJS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
@@ -210,6 +202,7 @@
 <script>
 "use strict";
 
+// The groups variable is provided by the view as groups_json.
 const groups = {{ groups_json|default:"[]"|safe }};
 
 // --- Loading Indicator ---
@@ -229,7 +222,7 @@ function updatePageSize() {
   window.location.href = url.toString();
 }
 
-// Expand/Collapse table sub-nodes
+// Expand/Collapse Functions
 function toggleGroup(event, groupId, childSelector) {
   event.stopPropagation();
   const children = document.querySelectorAll(childSelector);
@@ -249,127 +242,7 @@ function collapseAllNodes() {
   document.querySelectorAll("[id^='icon-']").forEach(icon => icon.classList.remove("rotate-90"));
 }
 
-// Exports
-function downloadCSV() {
-  const rows = document.querySelectorAll("#groupingTable tr");
-  const csv = [];
-  rows.forEach(row => {
-    const cells = Array.from(row.querySelectorAll("td, th")).map(cell => `"${cell.textContent.trim()}"`);
-    if (cells.length) csv.push(cells.join(","));
-  });
-  const blob = new Blob([csv.join("\n")], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "grouping_report.csv";
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function downloadJSON() {
-  const blob = new Blob([JSON.stringify(groups, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "grouping_report.json";
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function printReport() {
-  const content = document.getElementById("reportContainer").cloneNode(true);
-  const win = window.open("", "Print Report", "height=600,width=800");
-  win.document.write("<html><head><title>Print Report</title><style>");
-  win.document.write("body { font-family: sans-serif; margin: 20px; }");
-  win.document.write("table { width: 100%; border-collapse: collapse; }");
-  win.document.write("th, td { border: 1px solid #ddd; padding: 8px; }");
-  win.document.write("th { background: #333; color: #fff; }");
-  win.document.write("</style></head><body>");
-  win.document.body.appendChild(content);
-  win.document.write("</body></html>");
-  win.document.close();
-  win.focus();
-  win.print();
-  win.close();
-}
-
-// --- [SheetJS + jsPDF-AutoTable Exports] ---
-function exportTableToExcel() {
-  const table = document.getElementById("groupingTable");
-  const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
-  XLSX.writeFile(wb, "grouping_report.xlsx");
-}
-
-function exportTableToPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p', 'pt', 'letter');
-
-  const table = document.getElementById("groupingTable");
-  const sortedIndex = parseInt(table.getAttribute('data-sorted-column-index') || '-1', 10);
-  const sortDirection = table.getAttribute('data-sort-direction') || '';
-
-  // gather headers
-  const rawHeaders = Array.from(table.querySelectorAll("thead th"));
-  const headers = rawHeaders.map((th, i) => {
-    let text = th.textContent.trim();
-    if (i === sortedIndex && sortDirection) {
-      text += sortDirection === 'asc' ? ' ↑' : ' ↓';
-    }
-    return text;
-  });
-
-  // gather row data
-  const rowData = [];
-  table.querySelectorAll("tbody tr").forEach(tr => {
-    const cells = Array.from(tr.querySelectorAll("td")).map(td => td.textContent.trim());
-    rowData.push(cells);
-  });
-
-  doc.autoTable({
-    head: [headers],
-    body: rowData,
-    startY: 20,
-    margin: { left: 20, right: 20 },
-    styles: {
-      fontSize: 8,
-      cellPadding: 4
-    },
-    headStyles: {
-      fillColor: [128, 128, 128],
-      textColor: 255,
-      fontStyle: 'bold'
-    }
-  });
-
-  doc.save("grouping_report.pdf");
-}
-
-// --- Filtering ---
-function applyDynamicFilters() {
-  showLoading();
-  const filters = {
-    {% for header in header_list %}
-      "{{ header }}": document.getElementById("{{ header }}Filter").value.toLowerCase(),
-    {% endfor %}
-  };
-
-  const rows = document.querySelectorAll("#groupingTable tbody tr");
-  rows.forEach(row => {
-    let visible = true;
-    {% for header in header_list %}
-      {
-        const cell = row.querySelector(`td[data-header="{{ header }}"]`);
-        if (cell && filters["{{ header }}"] && !cell.textContent.toLowerCase().includes(filters["{{ header }}"])) {
-          visible = false;
-        }
-      }
-    {% endfor %}
-    row.style.display = visible ? "" : "none";
-  });
-  hideLoading();
-}
-
-// --- Chart init ---
+// --- Chart Initialization ---
 let groupingChart;
 function initChart(chartType = "bar") {
   const canvas = document.getElementById("groupingChart");
@@ -378,64 +251,35 @@ function initChart(chartType = "bar") {
     return;
   }
   const ctx = canvas.getContext("2d");
-
   if (typeof Chart === 'undefined') {
     console.error("Chart.js is not loaded.");
     return;
   }
-
+  console.log("Initializing chart with groups data:", groups);
   const labels = groups.map(g => g.value || "(Not Available)");
   const counts = groups.map(g => g.count || 0);
-  const defaultColors = [
-    '#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd',
-    '#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf'
-  ];
+  const defaultColors = ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf'];
   const colors = groups.map((g, i) => g.colour || defaultColors[i % defaultColors.length]);
-
   if (chartType === "wordCloud") {
     groupingChart = new Chart(ctx, {
       type: "wordCloud",
-      data: {
-        labels: labels,
-        datasets: [{
-          data: counts
-        }]
-      },
+      data: { labels: labels, datasets: [{ data: counts }] },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          title: { display: true, text: "{{ report_name }}" }
-        }
+        plugins: { legend: { display: false }, title: { display: true, text: "User Report" } }
       }
     });
     return;
   }
-
   groupingChart = new Chart(ctx, {
     type: chartType,
-    data: {
-      labels: labels,
-      datasets: [{
-        label: "Count",
-        data: counts,
-        backgroundColor: colors
-      }]
-    },
+    data: { labels: labels, datasets: [{ label: "Count", data: counts, backgroundColor: colors }] },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: {
-        legend: { position: "top" },
-        title: { display: true, text: "{{ report_name }}" }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          title: { display: true, text: "Count" }
-        }
-      }
+      plugins: { legend: { position: "top" }, title: { display: true, text: "User Report" } },
+      scales: { y: { beginAtZero: true, title: { display: true, text: "Count" } } }
     }
   });
 }
@@ -444,9 +288,7 @@ function changeChartType() {
   const type = document.getElementById("chartTypeSelect").value;
   const chartCanvas = document.getElementById("groupingChart").parentElement;
   const nodeGraph = document.getElementById("nodeGraphContainer");
-
   if (groupingChart) groupingChart.destroy();
-
   if (type === "nodegraph") {
     chartCanvas.classList.add("hidden");
     nodeGraph.classList.remove("hidden");
@@ -458,15 +300,13 @@ function changeChartType() {
   }
 }
 
-// Toggle Filters
+// --- Toggle Filter Panel ---
 function toggleFilterPanel() {
   const panel = document.getElementById("filterPanel");
   const icon = document.getElementById("filterIcon");
   const button = document.getElementById("filterToggleButton");
-
   const isVisible = !panel.classList.contains("hidden");
   panel.classList.toggle("hidden");
-
   if (isVisible) {
     icon.classList.remove("fa-filter-circle-xmark", "text-blue-600");
     icon.classList.add("fa-filter");
@@ -478,44 +318,33 @@ function toggleFilterPanel() {
   }
 }
 
-// Initialize default chart & collapse sub-nodes
+// --- Initialize on DOM Load ---
 document.addEventListener("DOMContentLoaded", () => {
   initChart();
   collapseAllNodes();
-
-  // [ADDED] Force an initial sort on column 0 so arrow is visible on page load
   sortTableByColumn('groupingTable', 0);
 });
 
-// Node Graph
+// --- Node Graph Initialization (using Cytoscape.js) ---
 function initNodeGraphFromTable() {
   const container = document.getElementById("nodeGraphContainer");
   const cyDiv = document.getElementById("cy");
-
-  if (cyDiv._cyInstance) {
-    cyDiv._cyInstance.destroy();
-  }
+  if (cyDiv._cyInstance) { cyDiv._cyInstance.destroy(); }
   container.classList.remove("hidden");
-
   const nodes = [];
   const edges = [];
   const added = new Set();
-
   if (!Array.isArray(groups) || groups.length === 0) {
     console.warn("No groups available to render in node graph.");
     return;
   }
-
-  // Create one node per group
   groups.forEach((group, idx) => {
     const id = group.value || `node${idx}`;
-    if (!added.has(id)) {
-      added.add(id);
+    if (!added.has(id)) { 
+      added.add(id); 
       nodes.push({ data: { id, label: id } });
     }
   });
-
-  // Optional: connect them in a simple chain
   for (let i = 0; i < nodes.length - 1; i++) {
     edges.push({
       data: {
@@ -525,14 +354,11 @@ function initNodeGraphFromTable() {
       }
     });
   }
-
   const cy = cytoscape({
     container: cyDiv,
     elements: [...nodes, ...edges],
     style: [
-      {
-        selector: 'node',
-        style: {
+      { selector: 'node', style: {
           'background-color': '#6366F1',
           'label': 'data(label)',
           'color': '#fff',
@@ -543,73 +369,49 @@ function initNodeGraphFromTable() {
           'height': '40px',
           'border-width': 2,
           'border-color': '#E0E7FF'
-        }
-      },
-      {
-        selector: 'edge',
-        style: {
+      }},
+      { selector: 'edge', style: {
           'width': 1.5,
           'line-color': '#CBD5E1',
           'target-arrow-color': '#CBD5E1',
           'target-arrow-shape': 'triangle',
           'curve-style': 'bezier'
-        }
-      }
+      }}
     ],
-    layout: {
-      name: 'cose',
-      padding: 10
-    }
+    layout: { name: 'cose', padding: 10 }
   });
-
   cyDiv._cyInstance = cy;
 }
 
-// [MODIFIED] Sort & store column index/direction
+// --- Sorting Function ---
 function sortTableByColumn(tableId, colIndex) {
   const table = document.getElementById(tableId);
   if (!table) return;
-
   const tBody = table.querySelector('tbody');
   if (!tBody) return;
-
   let rows = Array.from(tBody.querySelectorAll('tr'));
-
-  // Toggle sort direction
   let sortDirection = table.getAttribute('data-sort-direction') === 'asc' ? 'desc' : 'asc';
   table.setAttribute('data-sort-direction', sortDirection);
-
-  // Store which column is sorted
   table.setAttribute('data-sorted-column-index', colIndex);
-
-  // Detect if the column is numeric
   const firstCell = rows[0]?.querySelectorAll('td')[colIndex];
   const isNumeric = firstCell && !isNaN(parseFloat(firstCell.textContent));
-
   rows.sort((a, b) => {
     const aCell = a.querySelectorAll('td')[colIndex]?.textContent.trim() || "";
     const bCell = b.querySelectorAll('td')[colIndex]?.textContent.trim() || "";
-
     if (isNumeric) {
       return (parseFloat(aCell) - parseFloat(bCell)) * (sortDirection === 'asc' ? 1 : -1);
     } else {
       return aCell.localeCompare(bCell) * (sortDirection === 'asc' ? 1 : -1);
     }
   });
-
   rows.forEach(row => tBody.appendChild(row));
-
-  // Hide all arrows, then show the correct arrow for this column/direction
   const allArrows = table.querySelectorAll('thead th .sort-arrow');
   allArrows.forEach(arrow => arrow.classList.add('hidden'));
-
   const headers = table.querySelectorAll('thead th');
   const currentHeader = headers[colIndex];
   if (!currentHeader) return;
-
-  const upArrow = currentHeader.querySelector('.sort-arrow.up');
-  const downArrow = currentHeader.querySelector('.sort-arrow.down');
-
+  const upArrow = currentHeader ? currentHeader.querySelector('.sort-arrow.up') : null;
+  const downArrow = currentHeader ? currentHeader.querySelector('.sort-arrow.down') : null;
   if (sortDirection === 'asc' && upArrow) {
     upArrow.classList.remove('hidden');
   } else if (sortDirection === 'desc' && downArrow) {
@@ -621,7 +423,6 @@ function sortTableByColumn(tableId, colIndex) {
 <style>
   .rotate-90 { transform: rotate(90deg); }
   .hidden { display: none !important; }
-  /* Sticky header */
   #groupingTable thead th {
     position: sticky;
     top: 0;

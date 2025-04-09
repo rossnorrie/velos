@@ -44,6 +44,9 @@ class ApiClient:
 
     # ⬇⬇⬇ Move query_msgraph *into* the class and indent it properly
     def query_msgraph(self, base_url=None, params=None, max_retries=5, top=None, page_size=100):
+        
+        print(base_url)
+        print(params)
         headers = {
             "Authorization": f"Bearer {self.get_access_token()}",
             "Content-Type": "application/json"
@@ -55,16 +58,12 @@ class ApiClient:
         old_link = None
         records_retrieved = 0
 
+        if max_retries is None:
+            max_retries = 3
+        
         params = params or {}
 
-        # ✅ Auto-apply $orderby based on the first field in $select if not set
-        if '$orderby' not in params:
-            select_fields = params.get('$select')
-            if select_fields:
-                first_field = select_fields.split(',')[0].strip()
-                if first_field:
-                    params['$orderby'] = f"{first_field} asc"
-                    #print(f"Applied $orderby: {params['$orderby']}")
+
 
         # ✅ Only apply $top if it's a valid positive integer
         if isinstance(top, int) and top > 0:

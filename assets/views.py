@@ -16,7 +16,8 @@ from collections import defaultdict
 from django.shortcuts import render
 from django.utils.safestring import mark_safe
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
+import uuid
+from collections import defaultdict
 
 
 def to_dict(obj):
@@ -161,18 +162,14 @@ def asset_ms_graph_asset_list(request, group_by_properties=None, header_text=Non
     report_description = request.GET.get("report_description")
     report_icon = request.GET.get("report_icon")
 
-    # ✅ List of valid MS Graph managedDevices fields (customize as needed)
-    VALID_FIELDS = {
-        "id", "manufacturer", "model", "operatingSystem", "osVersion",
-        "deviceName", "lastSyncDateTime", "userPrincipalName", "enrolledDateTime"
-    }
+
 
     grouping_fields = []
     if group_by_properties:
         print("Raw group_by_properties:", group_by_properties)
         # Split and validate
         grouping_fields = [field.strip() for field in group_by_properties.split(",")]
-        grouping_fields = [f for f in grouping_fields if f in VALID_FIELDS]
+        #grouping_fields = [f for f in grouping_fields if f in VALID_FIELDS]
         print("Validated grouping_fields:", grouping_fields)
 
     # Reconstruct cleaned group_by_properties string
@@ -213,7 +210,7 @@ def asset_ms_graph_asset_list(request, group_by_properties=None, header_text=Non
 
             # --- Pagination: Only paginate the top-level groups ---
             paginator = Paginator(full_grouped_data, 10)  # 10 groups per page
-            page = request.GET.get('page')
+            page = request.GET.get('page', '1')
             try:
                 paged_groups = paginator.page(page)
             except PageNotAnInteger:
@@ -242,23 +239,132 @@ def asset_ms_graph_asset_list(request, group_by_properties=None, header_text=Non
             'error_message': f'An error occurred: {e}'
         })
         
+
+def asset_ms_graph_user_list_generic(request, group_by_properties=None, header_text=None):
+    group_by_properties = group_by_properties or request.GET.get("tree_view")
+    report_name = header_text or request.GET.get("report_name")
+    report_description = request.GET.get("report_description")
+    report_icon = request.GET.get("report_icon")
+
+    grouping_fields = []
+    if group_by_properties:
+        print("Raw group_by_properties:", group_by_properties)
+        grouping_fields = [field.strip() for field in group_by_properties.split(",")]
+        print("Validated grouping_fields:", grouping_fields)
+
+    cleaned_group_by_properties = ",".join(grouping_fields)
+
+    # Initialize MSGraphClient
+    client = ms_graph_toolkit.MSGraphClient(
+        tenant_id="42fd9015-de4d-4223-a368-baeacab48927",
+        client_id="2bc1c9b9-d0ad-4ff1-ac90-f5f54f942efb",
+        client_secret="o5B8Q~XnkYM_BFpZ3anY~5lzrSiVqqGW3P_60br1",
+        baseline="1"
+    )
+
+    try:
+        users = client.query_users(
+            email=None,
+            start_date=None,
+            end_date=None,
+            page_size=100,
+            top=100,
+            max_retries=5,
+            orbit=False,
+            presence=False,
+            accountType=None, group_by_properties=group_by_properties
+        )
+
+        if not users:
+            return render(request, 'assets/error_page.html', {
+                'error_message': 'No users found.'
+            })
+
+        if isinstance(users, list) and all(isinstance(u, dict) for u in users):
+            # Group and enhance the data
+            full_grouped_data = group_users_recursively(users, grouping_fields)
+            full_grouped_data = add_icon_and_colour(full_grouped_data)
+
+            # Paginate top-level user groups
+            paginator = Paginator(full_grouped_data, 10)
+            page = request.GET.get('page', '1')
+            try:
+                paged_groups = paginator.page(page)
+            except PageNotAnInteger:
+                paged_groups = paginator.page(1)
+            except EmptyPage:
+                paged_groups = paginator.page(paginator.num_pages)
+
+            return render(request, 'assets/generic_report.html', {
+                'groups': paged_groups,
+                'groups_json': mark_safe(json.dumps(full_grouped_data)),
+                'header_list': grouping_fields,
+                'paginator': paginator,
+                'report_name': report_name,
+                'report_description': report_description,
+                'report_icon': report_icon,
+            })
+        else:
+            return render(request, 'assets/error_page.html', {
+                'error_message': 'The data structure is not a list of dictionaries as expected.'
+            })
+
+    except Exception as e:
+        return render(request, 'assets/error_page.html', {
+            'error_message': f'An error occurred: {e}'
+        })
+
+def group_users_recursively(users, properties, level=0, color_palette=None):
+    if not properties:
+        return []
+
+    if color_palette is None:
+        color_palette = [
+            "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+            "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"
+        ]
+
+    grouped = defaultdict(list)
+    current_property = properties[0]
+
+    for user in users:
+        key = user.get(current_property, "(Not Available)")
+        grouped[key].append(user)
+
+    result = []
+    total_count = len(users)
+
+    for i, (key, items) in enumerate(grouped.items()):
+        subgroup = group_users_recursively(items, properties[1:], level + 1, color_palette)
+
+        group_entry = {
+            "group_by": current_property,
+            "value": key,
+            "count": len(items),
+            "percentage": (len(items) / total_count) * 100 if total_count else 0,
+        }
+
+        if level == 0:
+            group_entry["colour"] = color_palette[i % len(color_palette)]
+
+        if subgroup:
+            group_entry["sub_groups"] = subgroup
+
+        result.append(group_entry)
+
+    return result
+        
 @login_required        
-def asset_ms_graph_asset_list_working(request, group_by_properties=None):
+def asset_ms_graph_asset_list(request, group_by_properties=None):
     # Parse group_by_properties from query string if not passed as URL param
     group_by_properties = group_by_properties or request.GET.get("tree_view")
-
-    # ✅ List of valid MS Graph managedDevices fields (customize as needed)
-    VALID_FIELDS = {
-        "id", "manufacturer", "model", "operatingSystem", "osVersion",
-        "deviceName", "lastSyncDateTime", "userPrincipalName", "enrolledDateTime"
-    }
 
     grouping_fields = []
     if group_by_properties:
         print("Raw group_by_properties:", group_by_properties)
         # Split and validate
         grouping_fields = [field.strip() for field in group_by_properties.split(",")]
-        grouping_fields = [f for f in grouping_fields if f in VALID_FIELDS]
+        #grouping_fields = [f for f in grouping_fields if f in VALID_FIELDS]
         print("Validated grouping_fields:", grouping_fields)
 
     # Reconstruct cleaned group_by_properties string
@@ -352,13 +458,14 @@ def group_devices_recursively(devices, properties, level=0, color_palette=None):
 
     return result
 
-def add_icon_and_colour(groups):
+def add_icon_and_colour_old(groups):
     """
     Recursively injects icon and colour values into each group.
     """
     for group in groups:
-        group_by = group.get("group_by", "").lower()
-        value = (group.get("value") or "").strip().lower()
+        group_by = str(group.get("group_by") or "").strip().lower()
+        value = str(group.get("value") or "").strip().lower()
+
 
         if group_by == "operatingSystem":
             if value == "windows":
@@ -380,7 +487,70 @@ def add_icon_and_colour(groups):
             add_icon_and_colour(group["sub_groups"])
 
     return groups
+     
+def add_icon_and_colour(groups, mapping=None, default_icon="fas fa-folder", default_colour="#cccccc"):
+    """
+    Recursively injects icon and colour values into each group.
+    
+    :param groups: List of group dictionaries to process. Each group should have keys like "group_by" and "value",
+                   and optionally a "sub_groups" key with a list of further groups.
+    :param mapping: Optional dictionary mapping lower-case group_by keys to a sub-dictionary that maps values to 
+                    (icon, colour) tuples. It can include a "default" entry for unknown values.
+                    For example:
+                        {
+                          "operatingsystem": {
+                              "windows": ("fab fa-windows", "#1f77b4"),
+                              "macos": ("fab fa-apple", "#d62728"),
+                              "default": ("fas fa-question-circle", "#8c564b")
+                          },
+                          "osversion": {
+                              "default": ("fas fa-desktop", "#ff7f0e")
+                          }
+                        }
+    :param default_icon: Global default icon if group_by is not found in mapping.
+    :param default_colour: Global default colour if group_by is not found in mapping.
+    :returns: The updated groups with added "icon" and "colour" keys.
+    """
+    
+    if mapping is None:
+        # Define a default mapping if one isn't provided.
+        mapping = {
+            "operatingsystem": {
+                "windows": ("fab fa-windows", "#1f77b4"),
+                "macos": ("fab fa-apple", "#d62728"),
+                "default": ("fas fa-question-circle", "#8c564b")
+            },
+            "osversion": {
+                "default": ("fas fa-desktop", "#ff7f0e")
+            }
+        }
+
+    for group in groups:
+        # Safely get the text values for grouping key and its value.
+        group_by = (group.get("group_by") or "").strip().lower()
+        value = (group.get("value") or "").strip().lower()
         
+        if group_by in mapping:
+            value_mapping = mapping[group_by]
+            # If the value is explicitly mapped use it; otherwise, use the group-specific default if available.
+            if value in value_mapping:
+                icon, colour = value_mapping[value]
+            else:
+                icon, colour = value_mapping.get("default", (default_icon, default_colour))
+        else:
+            # Fallback to the global defaults.
+            icon, colour = (default_icon, default_colour)
+        
+        group["icon"] = icon
+        group["colour"] = colour
+        
+        # If sub_groups exist and is a list, process them recursively.
+        sub_groups = group.get("sub_groups")
+        if isinstance(sub_groups, list):
+            add_icon_and_colour(sub_groups, mapping, default_icon, default_colour)
+   
+    return groups
+   
 
 
 
@@ -403,7 +573,7 @@ def asset_ms_graph_user_list(request):
     )
 
     if users:
-        return render(request, 'assets/ms_graph_list.html', {'users': users})
+        return render(request, 'assets/generic_report.html', {'users': users})
 
 @login_required
 def asset_ms_graph_user_orbit(request):
@@ -440,4 +610,170 @@ def report_dashboard(request):
         'reports': reports,
 
     })
+##############################################################################################
+def generic_ms_graph_user(request, group_by_properties=None):
+    group_by_properties = request.GET.get("tree_view", "")
+    
+    try:
+        data, grouping_fields = generic_report_msgraph_data(
+            query_func=lambda client, **kwargs: client.query_users(**kwargs),
+            query_kwargs={
+                "email": None,
+                "start_date": None,
+                "end_date": None,
+                "page_size": 100,
+                "top": 100,
+                "max_retries": 5,
+                "orbit": False,
+                "presence": False,
+                "accountType": None,
+                "group_by_properties": group_by_properties
+            },
+            group_by_properties=group_by_properties
+        )
+        
+        return generic_grouped_report_renderer(
+            request=request,
+            data=data,
+            grouping_fields=grouping_fields,
+            header_text="User Report"
+        )
 
+    except ValueError as ve:
+        return render(request, 'assets/error_page.html', {'error_message': str(ve)})
+    except Exception as e:
+        return render(request, 'assets/error_page.html', {'error_message': f'Unexpected error: {e}'})
+    
+    
+##############################################################################################
+# Updated MSGraph Data Fetching Function
+def generic_report_msgraph_data(query_func, query_kwargs, group_by_properties):
+    # Initialize MSGraphClient
+    client = ms_graph_toolkit.MSGraphClient(
+        tenant_id="42fd9015-de4d-4223-a368-baeacab48927",
+        client_id="2bc1c9b9-d0ad-4ff1-ac90-f5f54f942efb",
+        client_secret="o5B8Q~XnkYM_BFpZ3anY~5lzrSiVqqGW3P_60br1",
+        baseline="1"
+    )
+
+    data = query_func(client, **query_kwargs)
+    
+    if not data:
+        raise ValueError('Invalid or no data returned from MS Graph.')
+
+    # Prepare grouping fields (each field is stripped of whitespace)
+    grouping_fields = [field.strip() for field in group_by_properties.split(",") if field.strip()]
+
+    grouped_data = recursive_grouping(data, grouping_fields)
+    
+    enhanced_data = add_icon_and_colour(grouped_data)
+
+    return enhanced_data, grouping_fields
+
+
+##############################################################################################
+# Updated Grouped Report Rendering Function
+def generic_grouped_report_renderer(request, data, grouping_fields, header_text=None):
+    report_name = header_text or request.GET.get("report_name", "Report")
+    report_description = request.GET.get("report_description", "")
+    report_icon = request.GET.get("report_icon", "fa-solid fa-chart-bar")
+    
+    paginator = Paginator(data, 10)
+    page = request.GET.get('page', '1')
+    print("paged_groups: " + page)
+    try:
+        paged_groups = paginator.page(page)
+    except PageNotAnInteger:
+        paged_groups = paginator.page(1)
+    except EmptyPage:
+        paged_groups = paginator.page(paginator.num_pages)
+
+    context = {
+        'groups': paged_groups,
+        'groups_json': mark_safe(json.dumps(data)),
+        'header_list': grouping_fields,
+        'paginator': paginator,
+        'report_name': report_name,
+        'report_description': report_description,
+        'report_icon': report_icon,
+    }
+    
+    try:
+        rend = render(request, 'assets/generic_report_ext.html', context)
+        return rend
+    except Exception as e:
+        print("Error rendering the template: ", e)
+        rend = render(request, 'assets/error_page.html', {'error_message': str(e)})
+        return rend
+
+
+##############################################################################################
+# Updated Recursive Grouping Utility
+def recursive_grouping(items, properties, level=0, color_palette=None):
+    if not properties:
+        return []
+    
+    if color_palette is None:
+        color_palette = [
+            "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+            "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"
+        ]
+    
+    try:
+        grouped = defaultdict(list)
+        current_property = properties[0]
+        for item in items:
+            # Use a default if the value is None or falsy.
+            key = item.get(current_property) or "(Not Available)"
+            grouped[key].append(item)
+        
+        result = []
+        total_count = len(items)
+        for i, (key, group_items) in enumerate(grouped.items()):
+            # Recursively build any sub-groups
+            subgroup = recursive_grouping(group_items, properties[1:], level + 1, color_palette)
+
+            # Add a unique id to each group entry using uuid4.
+            group_entry = {
+                "id": str(uuid.uuid4()),
+                "group_by": current_property,
+                "value": key,
+                "count": len(group_items),
+                "percentage": (len(group_items) / total_count) * 100 if total_count else 0,
+            }
+            if level == 0:
+                group_entry["colour"] = color_palette[i % len(color_palette)]
+            if subgroup:
+                group_entry["sub_groups"] = subgroup
+
+            result.append(group_entry)
+    except Exception as exc:
+        print(f"Error during grouping: {exc}")
+        return []
+
+    return result
+
+
+##############################################################################################
+# Updated Helper Function to Add Icons and Colours
+def add_icon_and_colour(grouped_data):
+    # Example mapping for group "value" to an icon.
+    icon_mapping = {
+        "(not available)": "fa-ban",
+        "active": "fa-check-circle",
+        "inactive": "fa-times-circle",
+        # Add any additional mappings as needed.
+    }
+    default_icon = "fa-default-icon"
+
+    for group in grouped_data:
+        # Safely convert the group "value" to a string and use a default if None.
+        value = group.get("value")
+        value_str = str(value) if value is not None else "(Not Available)"
+        group["icon"] = icon_mapping.get(value_str.lower(), default_icon)
+        
+        # Recursively process any sub-groups.
+        if "sub_groups" in group:
+            add_icon_and_colour(group["sub_groups"])
+    
+    return grouped_data

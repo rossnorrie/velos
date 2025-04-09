@@ -179,70 +179,50 @@ class MSGraphClient(ApiClient):
             return None
 
 
-    def query_users(self, email=None, start_date=None, end_date=None, page_size=None, top=None, max_retries=5, orbit=False, presence=False, accountType=None):
-        """
-        Query all users from Microsoft Graph API.
-        Handles OData paging to retrieve all results if necessary and retries on rate limiting.
-        """
+    def query_users(self, email=None, start_date=None, end_date=None, page_size=None, top=None, max_retries=5, orbit=False, presence=False, accountType=None, group_by_properties=None):
         params = {}
-
-        # Build the $filter parameter based on email (userPrincipalName), start_date, and end_date
         filter_clauses = []
 
         if email:
             filter_clauses.append(f"userPrincipalName eq '{email}'")
 
-        if accountType:
-            filter_clauses.append(f"userType eq '{accountType}'")
-
-        # Combine filter clauses
         if filter_clauses:
             params["$filter"] = " and ".join(filter_clauses)
 
-        params["$select"] = 'id, businessPhones, city, createdDateTime, companyName, country, department, displayName, givenName, jobTitle, onPremisesSamAccountName, onPremisesUserPrincipalName, postalCode, state, streetAddress, surname, usageLocation, userPrincipalName, userType, onPremisesExtensionAttributes'
+        if group_by_properties:
+            params["$select"] = group_by_properties
 
         if top:
             params["$top"] = top
 
         base_url = "https://graph.microsoft.com/beta/users"
 
-        # Await the query_msgraph method
-        user_data =  self.query_msgraph(base_url, params=params, max_retries=max_retries)
-
-        # Initialize an empty list to store results with baseline property
-        results_with_baseline = []
-
-        # Check if user_data is a list or dictionary and iterate accordingly
+        user_data = self.query_msgraph(base_url, params=params, max_retries=max_retries, top=top)
         records = user_data.get('value', []) if isinstance(user_data, dict) else user_data
-
-        # Process each user record
-        for record in records:
-            # Extract sign-in activity details
-            #sign_in_activity = record.get("signInActivity", {})
-            #record["lastSignInDateTime"] = sign_in_activity.get("lastSignInDateTime")
-
-            # Append additional details
-            #record['baseline'] = self.baseline
-            if isinstance(record, list):
-                # If record is a list, iterate over the list and process each item
-                for item in record:
-                    if isinstance(item, dict):
-                        if orbit:
-                            item['orbit'] = self.query_user_people(item['userPrincipalName'], page_size=None, top=5, max_retries=max_retries)
-                        if presence:
-                            item['presence'] = self.get_user_presence(item['userPrincipalName'], top=top, max_retries=max_retries)
-                        results_with_baseline.append(item)
-            else:
-                # If record is a dictionary
-                if orbit:
-                    record['orbit'] = self.query_user_people(record['userPrincipalName'], page_size=None, top=5, max_retries=max_retries)
-                if presence:
-                    record['presence'] = self.get_user_presence(record['userPrincipalName'], top=top, max_retries=max_retries)
+        #print(records)
+        results_with_baseline = []
+        '''
+        if orbit or presence:
+            for record in records:
+                if isinstance(record, list):
+                    for item in record:
+                        if isinstance(item, dict):
+                            if orbit:
+                                item['orbit'] = self.query_user_people(item['userPrincipalName'], page_size=None, top=5, max_retries=max_retries)
+                            if presence:
+                                item['presence'] = self.get_user_presence(item['userPrincipalName'], top=top, max_retries=max_retries)
+                            results_with_baseline.append(item)
+                elif isinstance(record, dict):
+                    if orbit:
+                        record['orbit'] = self.query_user_people(record['userPrincipalName'], page_size=None, top=5, max_retries=max_retries)
+                    if presence:
+                        record['presence'] = self.get_user_presence(record['userPrincipalName'], top=top, max_retries=max_retries)
                 results_with_baseline.append(record)
+            return results_with_baseline
+        '''
+        # 🔥 Always return something
+        return records
 
-            results_with_baseline.append(record)
-            print(results_with_baseline)
-        return results_with_baseline
 
 
     def get_users(self):
