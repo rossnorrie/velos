@@ -499,6 +499,7 @@ def report_dashboard(request):
 ##############################################################################################
 def generic_ms_graph_user(request, group_by_properties=None):
     group_by_properties = request.GET.get("tree_view", "")
+    report_name = request.GET.get("report_name", "Report")
     
     try:
         data, grouping_fields = generic_report_msgraph_data(
@@ -522,7 +523,7 @@ def generic_ms_graph_user(request, group_by_properties=None):
             request=request,
             data=data,
             grouping_fields=grouping_fields,
-            header_text="User Report"
+            header_text= report_name
         )
 
     except ValueError as ve:
@@ -532,6 +533,7 @@ def generic_ms_graph_user(request, group_by_properties=None):
     
 def generic_ms_graph_device(request, group_by_properties=None):
     group_by_properties = request.GET.get("tree_view", "")
+    report_name = request.GET.get("report_name", "Report")
     
     try:
         data, grouping_fields = generic_report_msgraph_data(
@@ -555,7 +557,7 @@ def generic_ms_graph_device(request, group_by_properties=None):
             request=request,
             data=data,
             grouping_fields=grouping_fields,
-            header_text="Device Report"
+            header_text=report_name
         )
 
     except ValueError as ve:
