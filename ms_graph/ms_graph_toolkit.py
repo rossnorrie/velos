@@ -263,7 +263,7 @@ class MSGraphClient(ApiClient):
                 results.append(record)
         return results
         
-    def query_devices(self, start_date, end_date, email=None, device_name=None, top=None, max_retries=5):
+    def query_devices(self, start_date, end_date, email=None, page_size=None, device_name=None, top=None, max_retries=5):
         """
         Query all managed devices from the Intune endpoint in Microsoft Graph API.
         Handles OData paging to retrieve all results if necessary and retries on rate limiting.
@@ -332,6 +332,7 @@ class MSGraphClient(ApiClient):
         device_name=None,
         top=None,
         group_by_properties=None,
+        page_size=None,
         max_retries=5
     ):
         """

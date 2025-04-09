@@ -4,27 +4,27 @@
     - level: int (0 for top-level, 1 for sub-group, etc.)
     - parent_id: string (optional; the unique id of this row's parent)
     - header_list: list of property names (e.g. ["companyName", "department", "jobTitle"])
-
-  This partial renders one row and, recursively, its child rows.
-  A unique ID is generated and prefixed with "grp-" so that all row IDs and selectors remain unique.
+  By design: top-level groups appear in column 0, sub-groups in column 1, etc.
 {% endcomment %}
 
 {% load unique_id %}
 {% load file_icon %}
 
-{% unique_id as raw_id %}
-{% with current_row_id="grp-"|add:raw_id %}
-<tr id="row-{{ current_row_id }}"
+{% unique_id as row_id %}
+<tr id="row-{{ row_id }}"
     class="group-row {% if parent_id %}child-of-{{ parent_id }} hidden{% else %}top-level{% endif %}"
-    {% if group.sub_groups %}onclick="toggleGroup(event, '{{ current_row_id }}', '.child-of-{{ current_row_id }}')" {% endif %}>
-  {# Loop over header_list; only output the cell in the column corresponding to this level #}
+    {% if group.sub_groups %}onclick="toggleGroup(event, '{{ row_id }}', '.child-of-{{ row_id }}')" {% endif %}>
+  
+  {# Loop through header_list, showing the value in the column matching the level #}
   {% for h in header_list %}
     {% if forloop.counter0 == level %}
-      <td data-header="{{ h }}" class="px-4 py-2 align-middle" style="padding-left: {{ level|add:"1" }}em;">
+      <td data-header="{{ h }}" class="px-4 py-2 align-middle"
+          style="padding-left: {{ level|add:"1" }}em;">
         {% if group.sub_groups %}
-          <i id="icon-{{ current_row_id }}" class="fas fa-chevron-right text-xs transition-transform duration-200 mr-1"></i>
+          <i id="icon-{{ row_id }}" class="fas fa-chevron-right text-xs transition-transform duration-200 mr-1"></i>
         {% endif %}
-        <i class="fas {{ group.value|file_icon }} mr-1"
+        <!-- Convert group.value to a string before sending to file_icon -->
+        <i class="fas {{ group.value|stringformat:"s"|file_icon }} mr-1"
            {% if level == 0 and group.colour %}style="color: {{ group.colour }};"{% endif %}></i>
         <span>{{ group.value|default:"(Not Available)" }}</span>
       </td>
@@ -32,8 +32,10 @@
       <td></td>
     {% endif %}
   {% endfor %}
+
   <!-- Count Column -->
   <td class="px-4 py-2 text-center">{{ group.count|default:"(Not Available)" }}</td>
+
   <!-- Percentage Column -->
   <td class="px-4 py-2 text-sm text-gray-800">
     <div class="relative bg-gray-200 rounded-full h-2.5 w-24">
@@ -54,7 +56,6 @@
 
 {% if group.sub_groups %}
   {% for subgroup in group.sub_groups %}
-    {% include "assets/grouping_row_ext.html" with group=subgroup parent_id=current_row_id level=level|add:"1" header_list=header_list %}
+    {% include "assets/grouping_row_ext.html" with group=subgroup parent_id=row_id level=level|add:"1" header_list=header_list %}
   {% endfor %}
 {% endif %}
-{% endwith %}

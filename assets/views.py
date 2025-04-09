@@ -644,7 +644,38 @@ def generic_ms_graph_user(request, group_by_properties=None):
     except Exception as e:
         return render(request, 'assets/error_page.html', {'error_message': f'Unexpected error: {e}'})
     
+def generic_ms_graph_device(request, group_by_properties=None):
+    group_by_properties = request.GET.get("tree_view", "")
     
+    try:
+        data, grouping_fields = generic_report_msgraph_data(
+            query_func=lambda client, **kwargs: client.query_devices_extended(**kwargs),
+            query_kwargs={
+                "email": None,
+                "start_date": None,
+                "end_date": None,
+                "page_size": 100,
+                "top": 100,
+                "max_retries": 5,
+                "device_name":None,
+                "group_by_properties": group_by_properties
+            },
+            group_by_properties=group_by_properties
+        )
+            
+        
+        print(data, grouping_fields)
+        return generic_grouped_report_renderer(
+            request=request,
+            data=data,
+            grouping_fields=grouping_fields,
+            header_text="Device Report"
+        )
+
+    except ValueError as ve:
+        return render(request, 'assets/error_page.html', {'error_message': str(ve)})
+    except Exception as e:
+        return render(request, 'assets/error_page.html', {'error_message': f'Unexpected error: {e}'})    
 ##############################################################################################
 # Updated MSGraph Data Fetching Function
 def generic_report_msgraph_data(query_func, query_kwargs, group_by_properties):

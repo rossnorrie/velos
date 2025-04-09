@@ -81,7 +81,8 @@
         <label for="{{ header }}Filter" class="block text-sm font-medium text-gray-700">
           Filter by {{ header|capfirst }}
         </label>
-        <input type="text" id="{{ header }}Filter" name="{{ header }}Filter" placeholder="Enter value..." class="w-full border border-gray-300 rounded px-2 py-1 mt-1" />
+        <input type="text" id="{{ header }}Filter" name="{{ header }}Filter" placeholder="Enter value..."
+               class="w-full border border-gray-300 rounded px-2 py-1 mt-1" />
       </div>
     {% endfor %}
   </div>
@@ -121,19 +122,22 @@
           <thead>
             <tr>
               {% for header in header_list %}
-                <!-- Removed onclick event here to preserve the hierarchical order -->
-                <th class="py-2 px-4 text-left text-white bg-gray-800 cursor-default">
+                <!-- Add onclick event to call our custom sort function -->
+                <th class="py-2 px-4 text-left text-white bg-gray-800 cursor-pointer"
+                    onclick="sortTableByColumn('groupingTable', {{ forloop.counter0 }})">
                   {{ header|capfirst }}
                   <span class="sort-arrow up hidden">▲</span>
                   <span class="sort-arrow down hidden">▼</span>
                 </th>
               {% endfor %}
-              <th class="py-2 px-4 text-left text-white bg-gray-800 cursor-default">
+              <th class="py-2 px-4 text-left text-white bg-gray-800 cursor-pointer"
+                  onclick="sortTableByColumn('groupingTable', {{ header_list|length }})">
                 Count
                 <span class="sort-arrow up hidden">▲</span>
                 <span class="sort-arrow down hidden">▼</span>
               </th>
-              <th class="py-2 px-4 text-left text-white bg-gray-800 cursor-default">
+              <th class="py-2 px-4 text-left text-white bg-gray-800 cursor-pointer"
+                  onclick="sortTableByColumn('groupingTable', {{ header_list|length|add:1 }})">
                 Percentage
                 <span class="sort-arrow up hidden">▲</span>
                 <span class="sort-arrow down hidden">▼</span>
@@ -242,7 +246,6 @@ function initChart(chartType = "bar") {
     return;
   }
   console.log("Initializing chart with groups data:", groups);
-  // Here we assume that group.percentage for each group is computed in the view relative to the grand total.
   const labels = groups.map(g => g.value || "(Not Available)");
   const counts = groups.map(g => g.count || 0);
   const defaultColors = ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf'];
@@ -305,8 +308,67 @@ function toggleFilterPanel() {
   }
 }
 
+// --- Sorting Function for Top-Level Rows ---
+// This function sorts only the rows with the "top-level" class and then appends their corresponding child rows.
+function sortTableByColumn(tableId, colIndex) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const tBody = table.querySelector('tbody');
+  if (!tBody) return;
+  // Get only top-level rows
+  const topRows = Array.from(tBody.querySelectorAll('tr.top-level'));
+  // Determine sort direction: toggle between 'asc' and 'desc'
+  let currentDirection = table.getAttribute('data-sort-direction') || 'asc';
+  let newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+  table.setAttribute('data-sort-direction', newDirection);
+  table.setAttribute('data-sorted-column-index', colIndex);
+  topRows.sort((a, b) => {
+      const aCell = a.querySelectorAll('td')[colIndex]?.textContent.trim() || "";
+      const bCell = b.querySelectorAll('td')[colIndex]?.textContent.trim() || "";
+      const isNumeric = !isNaN(parseFloat(aCell)) && !isNaN(parseFloat(bCell));
+      let comparison = 0;
+      if (isNumeric) {
+         comparison = parseFloat(aCell) - parseFloat(bCell);
+      } else {
+         comparison = aCell.localeCompare(bCell);
+      }
+      return newDirection === 'asc' ? comparison : -comparison;
+  });
+  // Clear tbody and reassemble rows: first, all sorted top-level rows with their corresponding child rows.
+  while (tBody.firstChild) {
+    tBody.removeChild(tBody.firstChild);
+  }
+  topRows.forEach(row => {
+    tBody.appendChild(row);
+    let rowId = row.id.replace("row-", "");
+    // Append all child rows that belong to this row.
+    const childRows = Array.from(document.querySelectorAll('tr.child-of-' + rowId));
+    childRows.forEach(childRow => {
+      tBody.appendChild(childRow);
+    });
+  });
+  // Update the arrow icons in header
+  const headers = table.querySelectorAll('thead th');
+  headers.forEach((header, idx) => {
+      const upArrow = header.querySelector('.sort-arrow.up');
+      const downArrow = header.querySelector('.sort-arrow.down');
+      if (idx == colIndex) {
+          if(newDirection === 'asc') {
+              if(upArrow) upArrow.classList.remove('hidden');
+              if(downArrow) downArrow.classList.add('hidden');
+          } else {
+              if(upArrow) upArrow.classList.add('hidden');
+              if(downArrow) downArrow.classList.remove('hidden');
+          }
+      } else {
+          if(upArrow) upArrow.classList.add('hidden');
+          if(downArrow) downArrow.classList.add('hidden');
+      }
+  });
+}
+
 // --- Initialization ---
-// Do not sort on load to preserve the hierarchy.
+// We want to preserve hierarchy by default, so no initial sorting.
 document.addEventListener("DOMContentLoaded", () => {
   initChart();
   collapseAllNodes();
@@ -368,14 +430,6 @@ function initNodeGraphFromTable() {
     layout: { name: 'cose', padding: 10 }
   });
   cyDiv._cyInstance = cy;
-}
-
-// --- Sorting Function ---
-// Sorting is disabled by default to preserve hierarchical order.
-// If you wish to add custom sorting that maintains parent-child grouping,
-// you’ll need a more advanced algorithm that sorts within each group.
-function sortTableByColumn(tableId, colIndex) {
-  // (Disabled for now)
 }
 </script>
 
