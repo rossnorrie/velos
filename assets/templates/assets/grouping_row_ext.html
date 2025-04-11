@@ -1,29 +1,18 @@
-{% comment %}
-  Expects:
-    - group: dict (with keys: group_by, value, count, percentage, sub_groups, icon, colour)
-    - level: int (0 for top-level, 1 for sub-group, etc.)
-    - parent_id: string (optional; the unique id of this row's parent)
-    - header_list: list of property names (e.g. ["companyName", "department", "jobTitle"])
-  By design: top-level groups appear in column 0, sub-groups in column 1, etc.
-{% endcomment %}
-
-{% load unique_id %}
+{% load unique_id %} 
 {% load file_icon %}
 
 {% unique_id as row_id %}
 <tr id="row-{{ row_id }}"
-    class="group-row {% if parent_id %}child-of-{{ parent_id }} hidden{% else %}top-level{% endif %}"
+    class="group-row {% if parent_id %}child-of-{{ parent_id }} hidden{% else %}top-level{% endif %} bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200"
     {% if group.sub_groups %}onclick="toggleGroup(event, '{{ row_id }}', '.child-of-{{ row_id }}')" {% endif %}>
   
-  {# Loop through header_list, showing the value in the column matching the level #}
   {% for h in header_list %}
     {% if forloop.counter0 == level %}
       <td data-header="{{ h }}" class="px-4 py-2 align-middle"
           style="padding-left: {{ level|add:"1" }}em;">
         {% if group.sub_groups %}
-          <i id="icon-{{ row_id }}" class="fas fa-chevron-right text-xs dark:text-gray-300 transition-transform duration-200 mr-1"></i>
+          <i id="icon-{{ row_id }}" class="fas fa-chevron-right text-xs transition-transform duration-200 mr-1 dark:text-gray-300"></i>
         {% endif %}
-        <!-- Convert group.value to a string before sending to file_icon -->
         <i class="fas {{ group.value|stringformat:"s"|file_icon }} mr-1"
            {% if level == 0 and group.colour %}style="color: {{ group.colour }};"{% endif %}></i>
         <span class="dark:text-gray-300">{{ group.value|default:"(Not Available)" }}</span>
@@ -38,18 +27,17 @@
 
   <!-- Percentage Column -->
   <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">
-    <div class="relative bg-gray-200 dark:bg-gray-600 rounded-full h-2.5 w-24">
+    <div class="relative bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 w-24">
+      {% with pct=group.percentage|default:0 %}
+      <div class="h-2.5 rounded-full"
+           style="width: {{ pct|floatformat:2 }}%;
+                  background-color: hsl(140, 100%, 45%);">
+      </div>
+    {% endwith %}
+      
       <div class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-black dark:text-white">
         {{ group.percentage|default:"(Not Available)"|floatformat:2 }}%
       </div>
-      {% with pct=group.percentage|default:0 %}
-        {% with hue=120|floatformat:0|add:"-"|add:pct|floatformat:"0" %}
-          <div class="bg-orange-500 h-2.5 rounded-full"
-               style="width: {{ pct|floatformat:2 }}%;
-                      background-color: hsl({{ 120|add:"-"|add:pct|floatformat:"0" }}, 100%, 45%);">
-          </div>
-        {% endwith %}
-      {% endwith %}
     </div>
   </td>
 </tr>

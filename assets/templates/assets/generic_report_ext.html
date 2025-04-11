@@ -2,155 +2,82 @@
 {% load static %}
 {% block content %}
 
+
 <!-- Loading Indicator -->
 <div id="loadingIndicator" class="fixed inset-0 flex items-center justify-center bg-gray-800 dark:bg-gray-900 bg-opacity-50 hidden z-50">
   <div class="text-white text-lg font-semibold">Loading...</div>
 </div>
 
-<div 
-  id="mergedToolbar"
-  class="
-    w-full
-    flex
-    items-center
-    justify-end
-    space-x-3
-    p-2
-    rounded-t
-    shadow
-    mb-0
-    border
-    border-b-0
-    bg-white          /* White in light mode */
-    dark:bg-gray-900  /* Dark gray in dark mode */
-    border-gray-200   /* Light border in light mode */
-    dark:border-gray-700 /* Darker border in dark mode */
-"
->
+<div id="mergedToolbar" class="w-full flex items-center justify-end space-x-3 p-2 rounded-t shadow mb-0 border border-b-0 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
+
   <!-- Chart Type Selector -->
   <div class="flex items-center space-x-1">
     <label for="chartTypeSelect" class="sr-only">Chart Type</label>
-    <!-- Icon: medium-gray in light mode, lighter in dark mode -->
     <i class="fas fa-chart-bar text-xl text-gray-600 dark:text-gray-200"></i>
-    <!-- Select: white background in light mode, dark gray in dark mode -->
-    <select
-      id="chartTypeSelect"
-      class="
-        border
-        border-gray-200
-        dark:border-gray-600
-        bg-white
-        dark:bg-gray-800
-        text-gray-700
-        dark:text-gray-200
-        rounded
-        px-2
-        py-1
-        focus:outline-none
-        hover:bg-gray-50
-        dark:hover:bg-gray-700
-      "
-      onchange="changeChartType()"
-    >
+    <select id="chartTypeSelect" class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded px-2 py-1 focus:outline-none hover:bg-gray-50 dark:hover:bg-gray-700" onchange="changeChartType()">
       <option value="bar" selected>Bar</option>
       <option value="line">Line</option>
       <option value="pie">Pie</option>
-      <!-- etc. -->
+      <option value="doughnut">Doughnut</option>
+      <option value="radar">Radar</option>
+      <option value="polarArea">Polar Area</option>
+      <option value="nodegraph">Node Graph</option>
+      <option value="wordCloud">Word Cloud</option>
     </select>
+
+      <!-- Action Buttons -->
+      <a href="javascript:void(0)" onclick="expandAllNodes()" title="Expand All" class="text-gray-600 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-300">
+        <i class="fas fa-expand text-xl"></i>
+      </a>
+      <a href="javascript:void(0)" onclick="collapseAllNodes()" title="Collapse All" class="text-gray-600 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-300">
+        <i class="fas fa-compress text-xl"></i>
+      </a>
+        <!-- Separator -->
+  <div class="border-l h-5 border-gray-200 dark:border-gray-700 mx-2"></div>
+      <a href="javascript:void(0)" onclick="downloadCSV()" title="Export CSV" class="text-gray-600 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-300">
+        <i class="fas fa-file-csv text-xl"></i>
+      </a>
+      <a href="javascript:void(0)" onclick="downloadJSON()" title="Export JSON" class="text-gray-600 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-300">
+        <i class="fas fa-file-code text-xl"></i>
+      </a>
+      <a href="javascript:void(0)" onclick="exportTableToPDF()" title="Export PDF" class="text-gray-600 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-300">
+        <i class="fas fa-file-pdf text-xl"></i>
+      </a>
+        <!-- Separator -->
+  <div class="border-l h-5 border-gray-200 dark:border-gray-700 mx-2"></div>
+      <a href="javascript:void(0)" onclick="printReport()" title="Print Report" class="text-gray-600 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-300">
+        <i class="fas fa-print text-xl"></i>
+      </a>
+  
   </div>
 
   <!-- Page Size Selector -->
   <div class="flex items-center space-x-1">
     <label for="pageSizeSelect" class="sr-only">Page Size</label>
     <i class="fas fa-list-ol text-xl text-gray-600 dark:text-gray-200"></i>
-    <select
-      id="pageSizeSelect"
-      class="
-        border
-        border-gray-200
-        dark:border-gray-600
-        bg-white
-        dark:bg-gray-800
-        text-gray-700
-        dark:text-gray-200
-        rounded
-        px-2
-        py-1
-        focus:outline-none
-        hover:bg-gray-50
-        dark:hover:bg-gray-700
-      "
-      onchange="updatePageSize()"
-    >
-      <option value="10" selected>10</option>
-      <option value="25">25</option>
-      <option value="50">50</option>
-      <!-- etc. -->
+    <select id="pageSizeSelect" class="border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded px-2 py-1 focus:outline-none hover:bg-gray-50 dark:hover:bg-gray-700" onchange="updatePageSize()">
+      {% for size in page_sizes %}
+      <option value="{{ size }}" {% if request.GET.page_size == size|stringformat:"s" %}selected{% endif %}>{{ size }}</option>
+    {% endfor %}
     </select>
   </div>
 
-  <!-- Separator -->
-  <div class="border-l h-5 border-gray-200 dark:border-gray-700 mx-2"></div>
+
 
   <!-- Action Buttons -->
-  <a 
-    href="javascript:void(0)" 
-    onclick="expandAllNodes()" 
-    title="Expand All" 
-    class="
-      text-gray-600 
-      dark:text-gray-200
-      hover:text-gray-500
-      dark:hover:text-gray-300
-    "
-  >
-    <i class="fas fa-expand text-xl"></i>
+  {% for action, icon in action_icons.items %}
+  <a href="javascript:void(0)" onclick="{{ action }}()" title="{{ action|capfirst }}" class="text-gray-600 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-300">
+    <i class="fas {{ icon }} text-xl"></i>
   </a>
-  <a 
-    href="javascript:void(0)" 
-    onclick="collapseAllNodes()" 
-    title="Collapse All"
-    class="
-      text-gray-600 
-      dark:text-gray-200
-      hover:text-gray-500
-      dark:hover:text-gray-300
-    "
-  >
-    <i class="fas fa-compress text-xl"></i>
-  </a>
+  {% endfor %}
 
   <!-- Separator -->
   <div class="border-l h-5 border-gray-200 dark:border-gray-700 mx-2"></div>
 
-  <!-- Additional Buttons/Icons (CSV, JSON, Excel, etc.) -->
-  <a 
-    href="javascript:void(0)" 
-    onclick="downloadCSV()" 
-    title="Export CSV"
-    class="
-      text-gray-600 
-      dark:text-gray-200
-      hover:text-gray-500
-      dark:hover:text-gray-300
-    "
-  >
-    <i class="fas fa-file-csv text-xl"></i>
+  <!-- Filter Toggle Button -->
+  <a href="javascript:void(0)" id="filterToggleButton" onclick="toggleFilterPanel()" title="Show/Hide Filters" class="text-gray-600 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-300 p-2 rounded transition">
+    <i id="filterIcon" class="fas fa-filter text-xl"></i>
   </a>
-  <a 
-    href="javascript:void(0)" 
-    onclick="downloadJSON()" 
-    title="Export JSON"
-    class="
-      text-gray-600 
-      dark:text-gray-200
-      hover:text-gray-500
-      dark:hover:text-gray-300
-    "
-  >
-    <i class="fas fa-file-code text-xl"></i>
-  </a>
-  <!-- etc. for other icons -->
 </div>
 
 <!-- Filter Panel -->
@@ -158,10 +85,7 @@
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
     {% for header in header_list %}
       <div>
-        <label for="{{ header }}Filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-          Filter by {{ header|capfirst }}
-        </label>
-        <!-- Operator Selector -->
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Filter by {{ header|capfirst }}</label>
         <select id="{{ header }}FilterOp" data-col-index="{{ forloop.counter0 }}" class="block w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded px-2 py-1 mt-1">
           <option value="contains" selected>Contains</option>
           <option value="equals">Equals</option>
@@ -170,20 +94,16 @@
           <option value="gt">Greater than</option>
           <option value="lt">Less than</option>
         </select>
-        <!-- Filter Input -->
-        <input type="text" id="{{ header }}Filter" name="{{ header }}Filter" data-col-index="{{ forloop.counter0 }}" data-type="text" placeholder="Enter value..." class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded px-2 py-1 mt-1" />
+        <input type="text" id="{{ header }}Filter" placeholder="Enter value..." class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded px-2 py-1 mt-1">
       </div>
     {% endfor %}
   </div>
   <div class="flex justify-end space-x-2">
-    <button onclick="clearFilters()" class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded">
-      Clear Filters
-    </button>
-    <button onclick="applyDynamicFilters()" class="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-blue-600 transition">
-      <i class="{{ report_icon }} mr-1"></i> Apply
-    </button>
+    <button onclick="clearFilters()" class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded">Clear Filters</button>
+    <button onclick="applyDynamicFilters()" class="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-blue-600 transition">Apply</button>
   </div>
 </div>
+
 
 <div class="w-full py-6">
   <h2 class="text-3xl font-bold mb-6 flex items-center">
@@ -298,6 +218,68 @@ function debounce(func, delay) {
   };
 }
 
+// exports and printing
+
+function downloadCSV() {
+  const rows = document.querySelectorAll("#groupingTable tr");
+  const csv = [];
+  rows.forEach(row => {
+    const cells = Array.from(row.querySelectorAll("td, th")).map(cell => `"${cell.textContent.trim()}"`);
+    if (cells.length) csv.push(cells.join(","));
+  });
+  const blob = new Blob([csv.join("\n")], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "grouping_report.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadJSON() {
+  const blob = new Blob([JSON.stringify(groups, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "grouping_report.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportTableToPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'pt', 'letter');
+  
+  doc.setFontSize(14);
+  doc.text("Grouping Report", 40, 40);
+  
+  doc.autoTable({
+    html: '#groupingTable',
+    startY: 60,
+    theme: 'grid',
+    headStyles: { fillColor: [51, 51, 51], textColor: 255, fontSize: 11 },
+    styles: { fontSize: 10, cellPadding: 5 }
+  });
+
+  doc.save('grouping_report.pdf');
+}
+
+function printReport() {
+  const content = document.getElementById("reportContainer").cloneNode(true);
+  const win = window.open("", "Print Report", "height=600,width=800");
+  win.document.write("<html><head><title>Print Report</title><style>");
+  win.document.write("body { font-family: sans-serif; margin: 20px; }");
+  win.document.write("table { width: 100%; border-collapse: collapse; }");
+  win.document.write("th, td { border: 1px solid #ddd; padding: 8px; }");
+  win.document.write("th { background: #333; color: #fff; }");
+  win.document.write("</style></head><body>");
+  win.document.body.appendChild(content);
+  win.document.write("</body></html>");
+  win.document.close();
+  win.focus();
+  win.print();
+  win.close();
+}
 // --- Loading Indicator Functions ---
 function showLoading() {
   document.getElementById("loadingIndicator").classList.remove("hidden");
@@ -438,12 +420,28 @@ function clearFilters() {
 // --- Expand/Collapse Functions ---
 function toggleGroup(event, groupId, childSelector) {
   event.stopPropagation();
+  
+  const parentRow = document.getElementById(`row-${groupId}`);
+  const tbody = parentRow.parentNode;
   const children = document.querySelectorAll(childSelector);
   const icon = document.getElementById("icon-" + groupId);
   let collapsing = Array.from(children).some(child => !child.classList.contains("hidden"));
-  children.forEach(child => child.classList.toggle("hidden", collapsing));
-  if (icon) icon.classList.toggle("rotate-90", !collapsing);
+
+  if (!collapsing) {
+    // Expanding: insert children directly after parent
+    let referenceNode = parentRow.nextSibling;
+    children.forEach(child => {
+      tbody.insertBefore(child, referenceNode);
+      child.classList.remove("hidden");
+    });
+    if (icon) icon.classList.add("rotate-90");
+  } else {
+    // Collapsing: hide children (and their descendants if necessary)
+    children.forEach(child => child.classList.add("hidden"));
+    if (icon) icon.classList.remove("rotate-90");
+  }
 }
+
 function expandAllNodes() {
   document.querySelectorAll("[class*='child-of-']").forEach(el => el.classList.remove("hidden"));
   document.querySelectorAll("[id^='icon-']").forEach(icon => icon.classList.add("rotate-90"));

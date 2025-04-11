@@ -557,7 +557,9 @@ def generic_ms_graph_device(request, group_by_properties=None):
             request=request,
             data=data,
             grouping_fields=grouping_fields,
-            header_text=report_name
+            header_text=report_name,
+            
+
         )
 
     except ValueError as ve:
@@ -596,6 +598,7 @@ def generic_grouped_report_renderer(request, data, grouping_fields, header_text=
     report_name = header_text or request.GET.get("report_name", "Report")
     report_description = request.GET.get("report_description", "")
     report_icon = request.GET.get("report_icon", "fa-solid fa-chart-bar")
+    pagesize = [10, 25, 50, 100, 250, 500]
     
     paginator = Paginator(data, 10)
     page = request.GET.get('page', '1')
@@ -615,6 +618,7 @@ def generic_grouped_report_renderer(request, data, grouping_fields, header_text=
         'report_name': report_name,
         'report_description': report_description,
         'report_icon': report_icon,
+        'page_sizes' : pagesize,
     }
     
     try:
