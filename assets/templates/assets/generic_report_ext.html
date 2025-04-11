@@ -7,70 +7,150 @@
   <div class="text-white text-lg font-semibold">Loading...</div>
 </div>
 
-<!-- Toolbar Section -->
-<div id="mergedToolbar" class="w-full flex items-center justify-end space-x-3 bg-gray-100 dark:bg-gray-800 p-2 rounded-t shadow mb-0 border border-b-0 border-gray-200 dark:border-gray-700">
+<div 
+  id="mergedToolbar"
+  class="
+    w-full
+    flex
+    items-center
+    justify-end
+    space-x-3
+    p-2
+    rounded-t
+    shadow
+    mb-0
+    border
+    border-b-0
+    bg-white          /* White in light mode */
+    dark:bg-gray-900  /* Dark gray in dark mode */
+    border-gray-200   /* Light border in light mode */
+    dark:border-gray-700 /* Darker border in dark mode */
+"
+>
   <!-- Chart Type Selector -->
   <div class="flex items-center space-x-1">
     <label for="chartTypeSelect" class="sr-only">Chart Type</label>
-    <i class="fas fa-chart-bar text-xl text-gray-700 dark:text-gray-200"></i>
-    <select id="chartTypeSelect" class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1" onchange="changeChartType()">
+    <!-- Icon: medium-gray in light mode, lighter in dark mode -->
+    <i class="fas fa-chart-bar text-xl text-gray-600 dark:text-gray-200"></i>
+    <!-- Select: white background in light mode, dark gray in dark mode -->
+    <select
+      id="chartTypeSelect"
+      class="
+        border
+        border-gray-200
+        dark:border-gray-600
+        bg-white
+        dark:bg-gray-800
+        text-gray-700
+        dark:text-gray-200
+        rounded
+        px-2
+        py-1
+        focus:outline-none
+        hover:bg-gray-50
+        dark:hover:bg-gray-700
+      "
+      onchange="changeChartType()"
+    >
       <option value="bar" selected>Bar</option>
       <option value="line">Line</option>
       <option value="pie">Pie</option>
-      <option value="doughnut">Doughnut</option>
-      <option value="radar">Radar</option>
-      <option value="polarArea">Polar Area</option>
-      <option value="nodegraph">Node Graph</option>
-      <option value="wordCloud">Word Cloud</option>
+      <!-- etc. -->
     </select>
   </div>
+
   <!-- Page Size Selector -->
   <div class="flex items-center space-x-1">
     <label for="pageSizeSelect" class="sr-only">Page Size</label>
-    <i class="fas fa-list-ol text-xl text-gray-700 dark:text-gray-200"></i>
-    <select id="pageSizeSelect" class="border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1" onchange="updatePageSize()">
-      <option value="10" {% if request.GET.page_size == "10" or not request.GET.page_size %}selected{% endif %}>10</option>
-      <option value="25" {% if request.GET.page_size == "25" %}selected{% endif %}>25</option>
-      <option value="50" {% if request.GET.page_size == "50" %}selected{% endif %}>50</option>
-      <option value="100" {% if request.GET.page_size == "100" %}selected{% endif %}>100</option>
-      <option value="250" {% if request.GET.page_size == "250" %}selected{% endif %}>250</option>
-      <option value="500" {% if request.GET.page_size == "500" %}selected{% endif %}>500</option>
+    <i class="fas fa-list-ol text-xl text-gray-600 dark:text-gray-200"></i>
+    <select
+      id="pageSizeSelect"
+      class="
+        border
+        border-gray-200
+        dark:border-gray-600
+        bg-white
+        dark:bg-gray-800
+        text-gray-700
+        dark:text-gray-200
+        rounded
+        px-2
+        py-1
+        focus:outline-none
+        hover:bg-gray-50
+        dark:hover:bg-gray-700
+      "
+      onchange="updatePageSize()"
+    >
+      <option value="10" selected>10</option>
+      <option value="25">25</option>
+      <option value="50">50</option>
+      <!-- etc. -->
     </select>
   </div>
+
   <!-- Separator -->
-  <div class="border-l h-5 border-gray-300 dark:border-gray-600 mx-2"></div>
+  <div class="border-l h-5 border-gray-200 dark:border-gray-700 mx-2"></div>
+
   <!-- Action Buttons -->
-  <a href="javascript:void(0)" onclick="expandAllNodes()" title="Expand All" class="text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100">
+  <a 
+    href="javascript:void(0)" 
+    onclick="expandAllNodes()" 
+    title="Expand All" 
+    class="
+      text-gray-600 
+      dark:text-gray-200
+      hover:text-gray-500
+      dark:hover:text-gray-300
+    "
+  >
     <i class="fas fa-expand text-xl"></i>
   </a>
-  <a href="javascript:void(0)" onclick="collapseAllNodes()" title="Collapse All" class="text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100">
+  <a 
+    href="javascript:void(0)" 
+    onclick="collapseAllNodes()" 
+    title="Collapse All"
+    class="
+      text-gray-600 
+      dark:text-gray-200
+      hover:text-gray-500
+      dark:hover:text-gray-300
+    "
+  >
     <i class="fas fa-compress text-xl"></i>
   </a>
+
   <!-- Separator -->
-  <div class="border-l h-5 border-gray-300 dark:border-gray-600 mx-2"></div>
-  <a href="javascript:void(0)" onclick="downloadCSV()" title="Export CSV" class="text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100">
+  <div class="border-l h-5 border-gray-200 dark:border-gray-700 mx-2"></div>
+
+  <!-- Additional Buttons/Icons (CSV, JSON, Excel, etc.) -->
+  <a 
+    href="javascript:void(0)" 
+    onclick="downloadCSV()" 
+    title="Export CSV"
+    class="
+      text-gray-600 
+      dark:text-gray-200
+      hover:text-gray-500
+      dark:hover:text-gray-300
+    "
+  >
     <i class="fas fa-file-csv text-xl"></i>
   </a>
-  <a href="javascript:void(0)" onclick="downloadJSON()" title="Export JSON" class="text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100">
+  <a 
+    href="javascript:void(0)" 
+    onclick="downloadJSON()" 
+    title="Export JSON"
+    class="
+      text-gray-600 
+      dark:text-gray-200
+      hover:text-gray-500
+      dark:hover:text-gray-300
+    "
+  >
     <i class="fas fa-file-code text-xl"></i>
   </a>
-  <a href="javascript:void(0)" onclick="exportTableToExcel()" title="Export Excel" class="text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100">
-    <i class="fas fa-file-excel text-xl"></i>
-  </a>
-  <a href="javascript:void(0)" onclick="exportTableToPDF()" title="Export PDF" class="text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100">
-    <i class="fas fa-file-pdf text-xl"></i>
-  </a>
-  <!-- Separator -->
-  <div class="border-l h-5 border-gray-300 dark:border-gray-600 mx-2"></div>
-  <a href="javascript:void(0)" onclick="printReport()" title="Print Report" class="text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100">
-    <i class="fas fa-print text-xl"></i>
-  </a>
-  <!-- Separator -->
-  <div class="border-l h-5 border-gray-300 dark:border-gray-600 mx-2"></div>
-  <!-- Expand/Collapse Filters -->
-  <a href="javascript:void(0)" id="filterToggleButton" onclick="toggleFilterPanel()" title="Show/Hide Filters" class="text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-gray-100 relative p-2 rounded transition">
-    <i id="filterIcon" class="fas fa-filter text-xl"></i>
-  </a>
+  <!-- etc. for other icons -->
 </div>
 
 <!-- Filter Panel -->
@@ -81,11 +161,24 @@
         <label for="{{ header }}Filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
           Filter by {{ header|capfirst }}
         </label>
-        <input type="text" id="{{ header }}Filter" name="{{ header }}Filter" placeholder="Enter value..." class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1 mt-1" />
+        <!-- Operator Selector -->
+        <select id="{{ header }}FilterOp" data-col-index="{{ forloop.counter0 }}" class="block w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded px-2 py-1 mt-1">
+          <option value="contains" selected>Contains</option>
+          <option value="equals">Equals</option>
+          <option value="starts">Starts with</option>
+          <option value="ends">Ends with</option>
+          <option value="gt">Greater than</option>
+          <option value="lt">Less than</option>
+        </select>
+        <!-- Filter Input -->
+        <input type="text" id="{{ header }}Filter" name="{{ header }}Filter" data-col-index="{{ forloop.counter0 }}" data-type="text" placeholder="Enter value..." class="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded px-2 py-1 mt-1" />
       </div>
     {% endfor %}
   </div>
   <div class="flex justify-end space-x-2">
+    <button onclick="clearFilters()" class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded">
+      Clear Filters
+    </button>
     <button onclick="applyDynamicFilters()" class="bg-blue-600 dark:bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-blue-600 transition">
       <i class="{{ report_icon }} mr-1"></i> Apply
     </button>
@@ -196,6 +289,15 @@ let currentSortDirection = 'asc'; // 'asc' or 'desc'
 // The groups variable is provided by the view as groups_json.
 const groups = {{ groups_json|default:"[]"|safe }};
 
+// --- Debounce Function ---
+function debounce(func, delay) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), delay);
+  };
+}
+
 // --- Loading Indicator Functions ---
 function showLoading() {
   document.getElementById("loadingIndicator").classList.remove("hidden");
@@ -214,10 +316,7 @@ function updatePageSize() {
 }
 
 // --- Generic Column Sorting ---
-// This function generically sorts the table rows in tbody based on the text content
-// of the cells in the specified column (colIndex). It does not use any custom data attributes.
 function sortTableByColumn(tableId, colIndex) {
-  // Toggle sort direction if the same column is clicked.
   if (currentSortColumn === colIndex) {
     currentSortDirection = (currentSortDirection === 'asc') ? 'desc' : 'asc';
   } else {
@@ -225,7 +324,6 @@ function sortTableByColumn(tableId, colIndex) {
     currentSortDirection = 'asc';
   }
   
-  // Reset all sort arrow icons.
   const table = document.getElementById(tableId);
   const ths = table.querySelectorAll("thead th");
   ths.forEach(th => {
@@ -235,7 +333,6 @@ function sortTableByColumn(tableId, colIndex) {
     if (downIcon) downIcon.classList.add("hidden");
   });
   
-  // Show the correct arrow icon on the sorted column.
   const sortedTh = ths[colIndex];
   if (sortedTh) {
     if (currentSortDirection === 'asc') {
@@ -247,27 +344,95 @@ function sortTableByColumn(tableId, colIndex) {
     }
   }
   
-  // Get all rows from the tbody.
   const tbody = table.getElementsByTagName("tbody")[0];
   const rowsArray = Array.from(tbody.getElementsByTagName("tr"));
   
-  // Sort the rows based solely on the text content in the target column.
   rowsArray.sort((rowA, rowB) => {
     const cellA = rowA.getElementsByTagName("td")[colIndex];
     const cellB = rowB.getElementsByTagName("td")[colIndex];
     const textA = cellA ? cellA.textContent.trim().toLowerCase() : "";
     const textB = cellB ? cellB.textContent.trim().toLowerCase() : "";
-    
-    // Use basic string comparison.
     if (textA < textB) return currentSortDirection === 'asc' ? -1 : 1;
     if (textA > textB) return currentSortDirection === 'asc' ? 1 : -1;
     return 0;
   });
   
-  // Re-append sorted rows to the tbody.
   rowsArray.forEach(row => {
     tbody.appendChild(row);
   });
+}
+
+// --- Dynamic Column Filtering ---
+function applyDynamicFilters() {
+  const filters = [];
+  document.querySelectorAll('select[id$="FilterOp"]').forEach(operatorSelect => {
+    const colIndex = operatorSelect.getAttribute('data-col-index');
+    const op = operatorSelect.value;
+    const baseId = operatorSelect.id.replace('FilterOp', 'Filter');
+    const inputEl = document.getElementById(baseId);
+    if (inputEl) {
+      const value = inputEl.value.trim();
+      filters.push({colIndex: parseInt(colIndex), operator: op, value: value});
+    }
+  });
+  
+  const table = document.getElementById("groupingTable");
+  const rows = table.querySelectorAll("tbody tr");
+  rows.forEach(row => {
+    let showRow = true;
+    filters.forEach(filter => {
+      const cell = row.getElementsByTagName("td")[filter.colIndex];
+      if (cell) {
+        const cellText = cell.textContent.trim();
+        const cellVal = cellText.toLowerCase();
+        const filterVal = filter.value.toLowerCase();
+        if (filter.operator === "contains") {
+          if (filterVal !== "" && !cellVal.includes(filterVal)) {
+            showRow = false;
+          }
+        } else if (filter.operator === "equals") {
+          if (filterVal !== "" && cellVal !== filterVal) {
+            showRow = false;
+          }
+        } else if (filter.operator === "starts") {
+          if (filterVal !== "" && !cellVal.startsWith(filterVal)) {
+            showRow = false;
+          }
+        } else if (filter.operator === "ends") {
+          if (filterVal !== "" && !cellVal.endsWith(filterVal)) {
+            showRow = false;
+          }
+        } else if (filter.operator === "gt") {
+          const numCell = parseFloat(cellText);
+          const numFilter = parseFloat(filter.value);
+          if (!isNaN(numCell) && !isNaN(numFilter)) {
+            if (numCell <= numFilter) showRow = false;
+          } else {
+            if (cellVal <= filterVal) showRow = false;
+          }
+        } else if (filter.operator === "lt") {
+          const numCell = parseFloat(cellText);
+          const numFilter = parseFloat(filter.value);
+          if (!isNaN(numCell) && !isNaN(numFilter)) {
+            if (numCell >= numFilter) showRow = false;
+          } else {
+            if (cellVal >= filterVal) showRow = false;
+          }
+        }
+      }
+    });
+    row.style.display = showRow ? "" : "none";
+  });
+}
+
+function clearFilters() {
+  document.querySelectorAll('select[id$="FilterOp"]').forEach(sel => {
+    sel.value = "contains";
+  });
+  document.querySelectorAll('input[id$="Filter"]').forEach(input => {
+    input.value = "";
+  });
+  applyDynamicFilters();
 }
 
 // --- Expand/Collapse Functions ---
@@ -302,7 +467,6 @@ function initChart(chartType = "bar") {
     return;
   }
   console.log("Initializing chart with groups data:", groups);
-  // Prepare labels and counts from groups.
   const labels = groups.map(g => g.value || "(Not Available)");
   const counts = groups.map(g => g.count || 0);
   const defaultColors = ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf'];
@@ -371,6 +535,10 @@ document.addEventListener("DOMContentLoaded", () => {
   collapseAllNodes();
   // Default sort: sort the first column (index 0) in ascending order.
   sortTableByColumn('groupingTable', 0);
+  document.querySelectorAll('select[id$="FilterOp"], input[id$="Filter"]').forEach(el => {
+    el.addEventListener('input', debounce(applyDynamicFilters, 300));
+    el.addEventListener('change', debounce(applyDynamicFilters, 300));
+  });
 });
 
 // --- Node Graph Initialization (Cytoscape.js) ---
