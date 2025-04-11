@@ -1,112 +1,101 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome Free -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    crossorigin="anonymous"
-    referrerpolicy="no-referrer"
-  />
-  <!-- Optional CSS to hide text when collapsed -->
-  <style>
-    .collapsed .sidebar-text {
-      display: none; /* Hide text in collapsed mode */
-    }
-  </style>
-</head>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Dashboard</title>
+  
+    <!-- ✅ Correct script order -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+      };
+    </script>
+  
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+  </head>
 
-<!-- 1) Use overflow-hidden on the body to prevent body-level scrolling -->
-<body class="bg-gray-100 overflow-hidden">
-
-  <!-- 2) Full-height flex container -->
+<body class="bg-gray-100 dark:bg-black text-gray-900 dark:text-gray-100 overflow-hidden">
   <div class="flex h-screen">
 
-    <!-- Sidebar (left) - stays fixed, no scroll classes here -->
-    <div
-      id="sidebar"
-      class="w-64 bg-gray-900 text-white flex flex-col transition-all duration-300"
-    >
-      <!-- Top Section with Logo + Collapse Button -->
+    <!-- Sidebar -->
+    <div id="sidebar" class="w-64 bg-gray-900 dark:bg-black text-white flex flex-col transition-all duration-300">
       <div class="flex items-center justify-between p-4 border-b border-gray-700">
-        <!-- Logo -->
-        <img
-          src="{% static 'images/velos.png' %}"
-          alt="Logo"
-          class="h-8"
-        />
-        <!-- Toggle Sidebar Button -->
-        <button
-          id="toggleSidebar"
-          class="text-white hover:text-gray-300 focus:outline-none"
-        >
+        <img src="{% static 'images/velos.png' %}" alt="Logo" class="h-8" />
+        <button id="toggleSidebar" class="text-white hover:text-gray-300 focus:outline-none">
           <i class="fas fa-bars"></i>
         </button>
       </div>
 
-      <!-- Navigation Links -->
       <nav class="flex-grow">
         <ul class="p-2">
-          <li class="py-2 px-4 hover:bg-gray-700">
+          <li class="py-2 px-4 hover:bg-gray-700 dark:hover:bg-gray-800">
             <a href="{% url 'home' %}" class="flex items-center">
               <i class="fas fa-house-user w-5 h-5"></i>
               <span class="ml-2 sidebar-text">Home</span>
             </a>
           </li>
-          <li class="py-2 px-4 hover:bg-gray-700">
+          <li class="py-2 px-4 hover:bg-gray-700 dark:hover:bg-gray-800">
             <a href="{% url 'asset_list' %}" class="flex items-center">
               <i class="fas fa-boxes w-5 h-5"></i>
               <span class="ml-2 sidebar-text">Asset</span>
             </a>
           </li>
-
-
-
-          <li class="py-2 px-4 hover:bg-gray-700">
+          <li class="py-2 px-4 hover:bg-gray-700 dark:hover:bg-gray-800">
             <a href="{% url 'lease' %}" class="flex items-center">
               <i class="fas fa-file-contract w-5 h-5"></i>
               <span class="ml-2 sidebar-text">Lease</span>
             </a>
           </li>
-          <li class="py-2 px-4 hover:bg-gray-700">
+          <li class="py-2 px-4 hover:bg-gray-700 dark:hover:bg-gray-800">
             <a href="{% url 'rental' %}" class="flex items-center">
               <i class="fas fa-door-open w-5 h-5"></i>
               <span class="ml-2 sidebar-text">Rental</span>
             </a>
           </li>
-          <li class="py-2 px-4 hover:bg-gray-700">
+          <li class="py-2 px-4 hover:bg-gray-700 dark:hover:bg-gray-800">
             <a href="{% url 'report_dashboard' %}" class="flex items-center">
               <i class="fas fa-desktop w-5 h-5"></i>
               <span class="ml-2 sidebar-text">Reports</span>
             </a>
           </li>
-
-
-            </ul>
-          </li>
         </ul>
       </nav>
 
-      <!-- Bottom Section -->
-      <div class="p-4 text-sm border-t border-gray-700 flex items-center">
-        <i class="fas fa-tasks w-5 h-5"></i>
-        <span class="ml-2 sidebar-text">Settings...</span>
+      <!-- Updated Sidebar Bottom Section -->
+      <div class="p-4 text-sm border-t border-gray-700 dark:border-gray-600 flex items-center justify-between">
+        <!-- Settings Text -->
+        <div class="flex items-center">
+          <i class="fas fa-tasks w-5 h-5"></i>
+          <span class="ml-2 sidebar-text">Settings...</span>
+        </div>
+
+        <!-- Separator -->
+        <div class="border-l h-5 border-gray-300 dark:border-gray-600 mx-2"></div>
+
+        <!-- Dark Mode Toggle Icon -->
+        <a href="javascript:void(0)" id="toggleDarkMode" title="Toggle Dark Mode" class="text-gray-300 hover:text-white dark:text-gray-400 dark:hover:text-white">
+          <i class="fas fa-moon text-xl"></i>
+        </a>
       </div>
     </div>
 
-    <!-- Main Content: make it scrollable by adding overflow-y-auto -->
+    <!-- Main Content -->
     <div class="flex-1 overflow-y-auto p-6">
-      <!-- Top Bar (No toggle button here, but it will scroll with content) -->
       <div class="flex justify-between items-center mb-4">
         <h1 class="text-2xl font-bold"></h1>
-        <!-- Profile Badge -->
-        <div class="flex items-center">
+
+        <!-- Profile -->
+        <div class="flex items-center ml-auto">
           <img
             class="w-10 h-10 rounded-full border border-white"
             src="{% static 'images/person.jpg' %}"
@@ -114,38 +103,46 @@
           />
           <div class="ml-4">
             <h2 class="text-m font-semibold">Ross</h2>
-            <p class="text-gray-500 text-sm">Developer</p>
+            <p class="text-gray-500 dark:text-gray-400 text-sm">Developer</p>
           </div>
         </div>
       </div>
 
-      <!-- Content Block -->
       {% block content %}
-      <p class="text-gray-600">What????</p>
+      <p class="text-gray-600 dark:text-gray-300">What????</p>
       {% endblock %}
     </div>
   </div>
 
-  <!-- Toggle Script -->
+  <!-- Scripts -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const toggleBtn = document.getElementById('toggleSidebar');
       const sidebar = document.getElementById('sidebar');
-
+      const darkModeToggle = document.getElementById('toggleDarkMode'); // ✅ Fix: uncomment this
+  
       toggleBtn.addEventListener('click', () => {
-        // Toggle the width classes
         sidebar.classList.toggle('w-64');
         sidebar.classList.toggle('w-16');
-        // Toggle 'collapsed' for optional text-hiding
         sidebar.classList.toggle('collapsed');
       });
+  
+      // ✅ Clean version with chart re-render
+      darkModeToggle.addEventListener('click', () => {
+        const html = document.documentElement;
+        html.classList.toggle('dark');
+        localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+        createCharts(); // ✅ Re-render charts after mode change
+      });
+  
+      // ✅ Apply saved theme on page load
+      if (localStorage.getItem('theme') === 'dark') {
+        document.documentElement.classList.add('dark');
+      }
+  
+      // ✅ Build charts initially
+      createCharts();
     });
-
-    // Show/hide the submenu
-    function toggleSubmenu(submenuId) {
-      const submenu = document.getElementById(submenuId);
-      submenu.classList.toggle('hidden');
-    }
   </script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 {% extends "dashboard/base.html" %}
-{% load static %}
+{% load static report_tags %}
 {% block content %}
 
 <div class="max-w-screen-xl mx-auto p-5 sm:p-10 md:p-16">
@@ -7,37 +7,36 @@
     <i class="fas fa-desktop text-4xl mr-3"></i>
     Report Dashboard
   </h2>
-  <h3 class="w-[70%] text-sm text-gray-600 mb-6">
+  <h3 class="w-[70%] text-sm text-gray-600 dark:text-gray-300 mb-6">
     This is the Report Dashboard, where all available reports are grouped by category. Each section represents a specific report category, and within each, you’ll find a set of related reports. This layout helps you quickly find and access reports by their logical grouping.
   </h3>
 
-    {% for category in reports %}
-      <div class="border-b mb-5 flex justify-between text-sm">
-        <div class="text-indigo-800 flex items-center pb-2 pr-2 border-b-2 border-indigo-600">
-          <i class="{{ category.cat_icon }} text-4xl mr-4"></i>
-          <div class="mb-2">
-            <a class="font-semibold inline-block normal-case text-xl">{{ category.cat_name }}</a>
-            <p class="text-gray-800 text-sm">
-              {{ category.cat_description }}
-            </p>
-          </div>
+  {% for category in reports %}
+    <div class="border-b mb-5 flex justify-between text-sm">
+      <div class="text-indigo-800 dark:text-indigo-300 flex items-center pb-2 pr-2 border-b-2 border-indigo-600">
+        <i class="{{ category.cat_icon }} text-4xl mr-4"></i>
+        <div class="mb-2">
+          <a class="font-semibold inline-block normal-case text-xl">{{ category.cat_name }}</a>
+          <p class="text-gray-800 dark:text-gray-200 text-sm">
+            {{ category.cat_description }}
+          </p>
         </div>
       </div>
-
+    </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 mb-10">
       {% for report in category.report_cat.all %}
-        <div class="rounded overflow-hidden shadow-lg flex flex-col">
+        <div class="rounded overflow-hidden shadow-lg flex flex-col bg-white dark:bg-gray-800">
           <div class="relative">
             <img class="w-full h-48 object-cover transition-transform duration-300 hover:scale-105"
                  src="{{ report.report_image }}?auto=compress&amp;cs=tinysrgb&amp;dpr=1&amp;w=500"
-                 alt="{{ report.name }}">
+                 alt="{{ report.alt_text|default:report.name }}">
 
             <div class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25"></div>
 
             {% if report.report_view %}
-              <a href="{% url report.report_view %}?{% if report.tree_items %}tree_view={{ report.tree_items|urlencode }}&amp;{% endif %}&amp;report_name={{ report.name|urlencode }}&amp;report_description={{ report.description|urlencode }}&amp;report_icon={{ report.report_icon|urlencode }}">
-                <div class="text-xs absolute top-0 right-0 bg-indigo-600 px-4 py-2 text-white mt-3 mr-3 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
+              <a href="{% url report.report_view %}?{{ report|report_query_params }}">
+                <div class="text-xs absolute top-0 right-0 bg-indigo-600 dark:bg-indigo-500 px-4 py-2 text-white mt-3 mr-3 hover:bg-white hover:text-indigo-600 transition duration-500 ease-in-out">
                   Launch...
                 </div>
               </a>
@@ -46,22 +45,22 @@
 
           <div class="px-6 py-4 mb-auto">
             <div class="flex items-center mb-2">
-              <i class="{{ report.report_icon }} text-xl text-indigo-600 mr-2"></i>
+              <i class="{{ report.report_icon }} text-xl text-indigo-600 dark:text-indigo-300 mr-2"></i>
               {% if report.report_view %}
-                <a href="{% url report.report_view %}?{% if report.tree_items %}tree_view={{ report.tree_items|urlencode }}&amp;{% endif %}&amp;report_name={{ report.name|urlencode }}&amp;report_description={{ report.description|urlencode }}&amp;report_icon={{ report.report_icon|urlencode }}" class="font-medium text-lg hover:text-indigo-600 transition duration-500 ease-in-out">
+                <a href="{% url report.report_view %}?{{ report|report_query_params }}" class="font-medium text-lg hover:text-indigo-600 dark:hover:text-indigo-300 transition duration-500 ease-in-out">
                   {{ report.name }}
                 </a>
               {% else %}
                 <span class="font-medium text-lg text-gray-400">{{ report.name }}</span>
               {% endif %}
             </div>
-            <p class="text-gray-500 text-sm">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">
               {{ report.description }}
             </p>
           </div>
 
-          <div class="px-6 py-3 flex flex-row items-center justify-between bg-gray-100">
-            <span class="py-1 text-xs font-regular text-gray-900 mr-1 flex flex-row items-center">
+          <div class="px-6 py-3 flex flex-row items-center justify-between bg-gray-100 dark:bg-gray-700">
+            <span class="py-1 text-xs font-regular text-gray-900 dark:text-gray-200 mr-1 flex flex-row items-center">
               <svg height="13px" width="13px" viewBox="0 0 512 512">
                 <path d="M256,0C114.837,0,0,114.837,0,256s114.837,256,256,256s256-114.837,256-256..." />
               </svg>
@@ -69,6 +68,8 @@
             </span>
           </div>
         </div>
+      {% empty %}
+        <p class="text-gray-500 dark:text-gray-300 text-sm">No reports available in this category.</p>
       {% endfor %}
     </div>
   {% endfor %}
