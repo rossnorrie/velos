@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from .models import Asset, Lease
+from assets.models import asset, lease
 from assets.serializers import AssetSerializer, LeaseSerializer
 
 @login_required
