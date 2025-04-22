@@ -152,7 +152,7 @@ class ClassificationCategory(models.Model):
     classification = models.ForeignKey(Classification, on_delete=models.SET_NULL, null=True, blank=True)
     datestamp = models.DateTimeField(default=datetime.datetime.now)
   
-    category = models.CharField(max_length=255, null=True, blank=True)
+    category  = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return self.category or f"Category {self.pk}"

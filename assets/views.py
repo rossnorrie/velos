@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework import viewsets
-from .models import asset, lease, documentz, similarityz, report_categories, reports
+from .models import asset, lease, documentz, similarityz, report_categories, reports, ClassificationDetail
 from .serializers import AssetSerializer, LeaseSerializer
 import asyncio
 import configparser
@@ -581,31 +581,59 @@ def generic_ms_graph_device(request, group_by_properties=None):
         return render(request, 'assets/error_page.html', {'error_message': str(ve)})
     except Exception as e:
         return render(request, 'assets/error_page.html', {'error_message': f'Unexpected error: {e}'})   
-     
+
+
+def get_valid_fields(model, prefix="", depth=3):
+    """
+    Recursively collects valid field paths for the given model.
+    Limits to `depth` levels of relationships to avoid infinite recursion.
+    """
+    valid_fields = get_valid_fields(model)
+
+    if depth <= 0:
+        return valid_fields
+
+    for field in model._meta.get_fields():
+        if field.auto_created and not field.concrete:
+            continue  # Skip reverse relations unless you want prefetch_related
+
+        if field.is_relation and hasattr(field, "related_model"):
+            # Go deeper into related model
+            nested_prefix = f"{prefix}{field.name}__"
+            valid_fields |= get_valid_fields(field.related_model, nested_prefix, depth - 1)
+        else:
+            valid_fields.add(f"{prefix}{field.name}")
+
+    return valid_fields
+
+
 ##############################################################################################
 # Updated MSGraph Data Fetching Function
-def generic_report_msgraph_data(query_func, query_kwargs, group_by_properties):
-    # Initialize MSGraphClient
-    client = ms_graph_toolkit.MSGraphClient(
-        tenant_id="42fd9015-de4d-4223-a368-baeacab48927",
-        client_id="2bc1c9b9-d0ad-4ff1-ac90-f5f54f942efb",
-        client_secret="o5B8Q~XnkYM_BFpZ3anY~5lzrSiVqqGW3P_60br1",
-        baseline="1"
-    )
+def get_valid_fields(model, prefix="", depth=3, visited=None):
+    if visited is None:
+        visited = set()
 
-    data = query_func(client, **query_kwargs)
-    
-    if not data:
-        raise ValueError('Invalid or no data returned from MS Graph.')
+    model_id = f"{model._meta.app_label}.{model.__name__}"
+    if model_id in visited or depth <= 0:
+        return set()
 
-    # Prepare grouping fields (each field is stripped of whitespace)
-    grouping_fields = [field.strip() for field in group_by_properties.split(",") if field.strip()]
+    visited.add(model_id)
+    valid_fields = set()
 
-    grouped_data = recursive_grouping(data, grouping_fields)
-    
-    enhanced_data = add_icon_and_colour(grouped_data)
+    for field in model._meta.get_fields():
+        if field.auto_created and not field.concrete:
+            continue
+        if field.is_relation and hasattr(field, "related_model"):
+            try:
+                related_model = field.related_model
+                nested_prefix = f"{prefix}{field.name}__"
+                valid_fields |= get_valid_fields(related_model, nested_prefix, depth - 1, visited.copy())
+            except Exception:
+                continue
+        else:
+            valid_fields.add(f"{prefix}{field.name}")
+    return valid_fields
 
-    return enhanced_data, grouping_fields
 
 
 @login_required
@@ -625,14 +653,7 @@ def generic_db(request, group_by_properties=None):
             return HttpResponseBadRequest("Model not found")
 
         # Build valid fields (direct + 1-level related lookups)
-        valid_fields = set()
-        for field in Model._meta.get_fields():
-            if not field.is_relation:
-                valid_fields.add(field.name)
-            elif field.is_relation and hasattr(field, "related_model"):
-                related_model = field.related_model
-                for subfield in related_model._meta.fields:
-                    valid_fields.add(f"{field.name}__{subfield.name}")
+        valid_fields = get_valid_fields(Model)
 
         # Process and validate grouping fields
         raw_grouping_fields = [f.strip() for f in tree_view.split(",") if f.strip()]
@@ -640,6 +661,12 @@ def generic_db(request, group_by_properties=None):
         if not grouping_fields:
             return HttpResponseBadRequest("No valid fields found in tree_view")
 
+        print("=== VALID FIELDS ===")
+        for field in sorted(valid_fields):
+            print(field)
+
+        print("=== RAW GROUPING FIELDS ===")
+        print(raw_grouping_fields)
         # Reserved query params (not used for filtering)
         reserved = {
             "model", "model_name", "tree_view", "report_name",
@@ -659,7 +686,21 @@ def generic_db(request, group_by_properties=None):
 
         # Perform the query
         #queryset = list(Model.objects.filter(q_object).values(*grouping_fields))
-        queryset = list(Model.objects.all().values(*grouping_fields))
+        #queryset = list(Model.objects.all().values(*grouping_fields))
+        # Determine related lookups to optimize joins (only parent lookups for now)
+        related_lookups = set()
+        for field in grouping_fields:
+            parts = field.split("__")
+            if len(parts) > 1:
+                related_lookups.add("__".join(parts[:-1]))
+
+        # Perform the query with related data included
+        queryset = list(
+            Model.objects.filter(q_object)
+            .select_related(*related_lookups)  # Enables access to FK fields
+            .values(*grouping_fields)
+        )        
+
         if not queryset:
             return render(request, 'assets/error_page.html', {
                 'error_message': 'No data found for the given filters.'
@@ -674,7 +715,9 @@ def generic_db(request, group_by_properties=None):
             request=request,
             data=grouped_data,
             grouping_fields=grouping_fields,
-            header_text=report_name
+            header_text=report_name,
+            report_description=request.GET.get("report_description", ""),
+            report_icon=request.GET.get("report_icon", "fa-solid fa-chart-bar")
         )
 
 
