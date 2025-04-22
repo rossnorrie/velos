@@ -132,7 +132,9 @@
         const html = document.documentElement;
         html.classList.toggle('dark');
         localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
-        createCharts(); // ✅ Re-render charts after mode change
+        if (typeof createCharts === "function") {
+          createCharts();
+}
       });
   
       // ✅ Apply saved theme on page load

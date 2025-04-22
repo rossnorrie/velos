@@ -17,7 +17,13 @@ from django.shortcuts import render
 from django.utils.safestring import mark_safe
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import uuid
-from collections import defaultdict
+from collections import defaultdict, Counter
+from django.http import HttpResponseBadRequest
+from django.apps import apps
+from django.db.models import Q
+
+
+
 
 
 def to_dict(obj):
@@ -135,7 +141,7 @@ def asset_ms_graph_asset_list(request, group_by_properties=None, header_text=Non
 
             # Pass the full data for the chart and paginated data for the table,
             # along with the report properties from the query string.
-            return render(request, 'assets/generic_report.html', {
+            return render(request, html_name, {
                 'groups': paged_groups,  # Paginated groups for table
                 'groups_json': mark_safe(json.dumps(full_grouped_data)),  # Full data for chart rendering
                 'header_list': grouping_fields,
@@ -187,7 +193,8 @@ def asset_ms_graph_user_list_generic(request, group_by_properties=None, header_t
             max_retries=5,
             orbit=False,
             presence=False,
-            accountType=None, group_by_properties=group_by_properties
+            accountType=None, 
+            group_by_properties=group_by_properties
         )
 
         if not users:
@@ -210,7 +217,7 @@ def asset_ms_graph_user_list_generic(request, group_by_properties=None, header_t
             except EmptyPage:
                 paged_groups = paginator.page(paginator.num_pages)
 
-            return render(request, 'assets/generic_report.html', {
+            return render(request, html_name, {
                 'groups': paged_groups,
                 'groups_json': mark_safe(json.dumps(full_grouped_data)),
                 'header_list': grouping_fields,
@@ -306,6 +313,7 @@ def asset_ms_graph_asset_list(request, group_by_properties=None):
             top=None,
             max_retries=None,
             group_by_properties=cleaned_group_by_properties
+            
         )
 
         if not devices:
@@ -332,6 +340,9 @@ def asset_ms_graph_asset_list(request, group_by_properties=None):
             'error_message': f'An error occurred: {e}'
         })
 
+
+
+###########################################################################
 def group_devices_recursively(devices, properties, level=0, color_palette=None):
     if not properties:
         return []
@@ -360,14 +371,11 @@ def group_devices_recursively(devices, properties, level=0, color_palette=None):
             "value": key,
             "count": len(items),
             "percentage": (len(items) / total_count) * 100 if total_count else 0,
+            "sub_groups": subgroup  # ✅ always include this
         }
 
-        # Assign unique color for top-level groups (level 0)
         if level == 0:
             group_entry["colour"] = color_palette[i % len(color_palette)]
-
-        if subgroup:
-            group_entry["sub_groups"] = subgroup
 
         result.append(group_entry)
 
@@ -455,7 +463,8 @@ def asset_ms_graph_user_list(request):
         end_date=None,
         top=100,
         max_retries=None,
-        accountType='Member'
+        accountType='Member',
+        group_by_properties=group_by_properties
     )
 
     if users:
@@ -479,7 +488,8 @@ def asset_ms_graph_user_orbit(request):
         max_retries=5,
         orbit=True,
         presence=False,
-        accountType='Member'
+        accountType='Member',
+        group_by_properties=group_by_properties
     )
 
     if users:
@@ -500,6 +510,7 @@ def report_dashboard(request):
 def generic_ms_graph_user(request, group_by_properties=None):
     group_by_properties = request.GET.get("tree_view", "")
     report_name = request.GET.get("report_name", "Report")
+    html_name = request.GET.get("html_name")
     
     try:
         data, grouping_fields = generic_report_msgraph_data(
@@ -515,6 +526,7 @@ def generic_ms_graph_user(request, group_by_properties=None):
                 "presence": False,
                 "accountType": None,
                 "group_by_properties": group_by_properties
+                
             },
             group_by_properties=group_by_properties
         )
@@ -534,7 +546,8 @@ def generic_ms_graph_user(request, group_by_properties=None):
 def generic_ms_graph_device(request, group_by_properties=None):
     group_by_properties = request.GET.get("tree_view", "")
     report_name = request.GET.get("report_name", "Report")
-    
+    html_name = request.GET.get("html_name")
+
     try:
         data, grouping_fields = generic_report_msgraph_data(
             query_func=lambda client, **kwargs: client.query_devices_extended(**kwargs),
@@ -547,6 +560,7 @@ def generic_ms_graph_device(request, group_by_properties=None):
                 "max_retries": 5,
                 "device_name":None,
                 "group_by_properties": group_by_properties
+                
             },
             group_by_properties=group_by_properties
         )
@@ -557,7 +571,8 @@ def generic_ms_graph_device(request, group_by_properties=None):
             request=request,
             data=data,
             grouping_fields=grouping_fields,
-            header_text=report_name,
+            header_text=report_name
+            
             
 
         )
@@ -565,7 +580,8 @@ def generic_ms_graph_device(request, group_by_properties=None):
     except ValueError as ve:
         return render(request, 'assets/error_page.html', {'error_message': str(ve)})
     except Exception as e:
-        return render(request, 'assets/error_page.html', {'error_message': f'Unexpected error: {e}'})    
+        return render(request, 'assets/error_page.html', {'error_message': f'Unexpected error: {e}'})   
+     
 ##############################################################################################
 # Updated MSGraph Data Fetching Function
 def generic_report_msgraph_data(query_func, query_kwargs, group_by_properties):
@@ -592,11 +608,90 @@ def generic_report_msgraph_data(query_func, query_kwargs, group_by_properties):
     return enhanced_data, grouping_fields
 
 
+@login_required
+def generic_db(request, group_by_properties=None):
+    model_name = request.GET.get("model_name")  # e.g., "Documentz"
+    html_name = request.GET.get("html_name")
+    tree_view = request.GET.get("tree_view")  # e.g., "category,extension"
+    report_name = request.GET.get("report_name", "Report")
+
+    if not model_name or not tree_view:
+        return HttpResponseBadRequest("Missing required parameters: model and tree_view")
+
+    try:
+        # Load model from assets app
+        Model = apps.get_model(app_label="assets", model_name=model_name)
+        if not Model:
+            return HttpResponseBadRequest("Model not found")
+
+        # Build valid fields (direct + 1-level related lookups)
+        valid_fields = set()
+        for field in Model._meta.get_fields():
+            if not field.is_relation:
+                valid_fields.add(field.name)
+            elif field.is_relation and hasattr(field, "related_model"):
+                related_model = field.related_model
+                for subfield in related_model._meta.fields:
+                    valid_fields.add(f"{field.name}__{subfield.name}")
+
+        # Process and validate grouping fields
+        raw_grouping_fields = [f.strip() for f in tree_view.split(",") if f.strip()]
+        grouping_fields = [f for f in raw_grouping_fields if f in valid_fields]
+        if not grouping_fields:
+            return HttpResponseBadRequest("No valid fields found in tree_view")
+
+        # Reserved query params (not used for filtering)
+        reserved = {
+            "model", "model_name", "tree_view", "report_name",
+            "report_description", "report_icon", "html_name"
+        }
+
+        # Filter params that match valid fields only
+        filters = {
+            k: v for k, v in request.GET.items()
+            if k not in reserved and k in valid_fields and v
+        }
+
+        # Build Q object for filtering
+        q_object = Q()
+        for key, value in filters.items():
+            q_object &= Q(**{key: value})
+
+        # Perform the query
+        #queryset = list(Model.objects.filter(q_object).values(*grouping_fields))
+        queryset = list(Model.objects.all().values(*grouping_fields))
+        if not queryset:
+            return render(request, 'assets/error_page.html', {
+                'error_message': 'No data found for the given filters.'
+            })
+
+        # Group and enrich data
+        grouped_data = group_devices_recursively(queryset, grouping_fields)
+        grouped_data = add_icon_and_colour(grouped_data)
+        
+        # Render report
+        return generic_grouped_report_renderer(
+            request=request,
+            data=grouped_data,
+            grouping_fields=grouping_fields,
+            header_text=report_name
+        )
+
+
+
+
+    except LookupError:
+        return HttpResponseBadRequest("Invalid model specified")
+    except Exception as e:
+        return render(request, 'assets/error_page.html', {
+            'error_message': f'An error occurred: {e}'
+        })
 ##############################################################################################
 # Updated Grouped Report Rendering Function
-def generic_grouped_report_renderer(request, data, grouping_fields, header_text=None):
+def generic_grouped_report_renderer(request, data, grouping_fields, header_text=None, report_description="", report_icon="fa-solid fa-chart-bar"):
     report_name = header_text or request.GET.get("report_name", "Report")
     report_description = request.GET.get("report_description", "")
+    html_name = request.GET.get("html_name")
     report_icon = request.GET.get("report_icon", "fa-solid fa-chart-bar")
     pagesize = [10, 25, 50, 100, 250, 500]
     
@@ -610,6 +705,7 @@ def generic_grouped_report_renderer(request, data, grouping_fields, header_text=
     except EmptyPage:
         paged_groups = paginator.page(paginator.num_pages)
 
+
     context = {
         'groups': paged_groups,
         'groups_json': mark_safe(json.dumps(data)),
@@ -619,10 +715,18 @@ def generic_grouped_report_renderer(request, data, grouping_fields, header_text=
         'report_description': report_description,
         'report_icon': report_icon,
         'page_sizes' : pagesize,
+        "action_icons": {
+        "downloadCSV": "fa-file-csv",
+        "downloadJSON": "fa-file-code",
+        "exportTableToPDF": "fa-file-pdf",
+        "printReport": "fa-print"
+        }
     }
     
     try:
-        rend = render(request, 'assets/generic_report_ext.html', context)
+
+        rend = render(request, html_name, context)
+        
         return rend
     except Exception as e:
         print("Error rendering the template: ", e)

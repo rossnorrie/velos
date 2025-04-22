@@ -1,5 +1,28 @@
 from django.db import models
 from django.utils import timezone
+import datetime
+
+
+
+
+class Similarity(models.Model):
+    doc1 = models.ForeignKey("assets.Document", on_delete=models.SET_NULL, null=True, blank=True, related_name='similarity_doc1')
+    doc2 = models.ForeignKey("assets.Document", on_delete=models.SET_NULL, null=True, blank=True, related_name='similarity_doc2')
+    meta_sim = models.FloatField(null=True, blank=True)
+    text_sim = models.FloatField(null=True, blank=True)
+    image_sim = models.FloatField(null=True, blank=True)
+    semantic_sim = models.FloatField(null=True, blank=True)
+    overall_sim = models.FloatField(null=True, blank=True)
+    datestamp = models.DateTimeField(default=datetime.datetime.now)
+  
+    class Meta:
+        db_table = "assets_similarities"
+        
+    def __str__(self):
+        return f"Similarity {self.pk} - Doc {self.doc1_id} vs Doc {self.doc2_id}"
+
+
+
 
 class asset(models.Model):
     name = models.CharField(max_length=255)
@@ -7,7 +30,7 @@ class asset(models.Model):
     purchase_date = models.DateField()
     lease_status = models.BooleanField(default=False)
     price = models.FloatField(null=True, blank=True)
-    datestamp = models.DateTimeField(default=timezone.now)
+    datestamp = models.DateTimeField(default=datetime.datetime.now)
    
 
     def __str__(self):
@@ -20,7 +43,7 @@ class lease(models.Model):
     lease_start = models.DateField()
     lease_end = models.DateField()
     monthly_rent = models.DecimalField(max_digits=10, decimal_places=2)
-    datestamp = models.DateTimeField(default=timezone.now)
+    datestamp = models.DateTimeField(default=datetime.datetime.now)
   
 
     def __str__(self):
@@ -40,7 +63,7 @@ class documentz(models.Model):
     last_modified_by = models.CharField(max_length=255, null=True, blank=True)
     revision = models.CharField(max_length=50, null=True, blank=True)
     category = models.CharField(max_length=255, null=True, blank=True)
-    datestamp = models.DateTimeField(default=timezone.now)
+    datestamp = models.DateTimeField(default=datetime.datetime.now)
   
 
     def __str__(self):
@@ -55,7 +78,7 @@ class similarityz(models.Model):
     text_sim = models.FloatField(null=True, blank=True)
     image_sim = models.FloatField(null=True, blank=True)
     overall_sim = models.FloatField(null=True, blank=True)
-    datestamp = models.DateTimeField(default=timezone.now)
+    datestamp = models.DateTimeField(default=datetime.datetime.now)
   
 
     def __str__(self):
@@ -66,7 +89,7 @@ class report_categories(models.Model):
     cat_name = models.CharField(max_length=255, null=True, blank=True)
     cat_description = models.CharField(max_length=512, null=True, blank=True)
     cat_icon = models.CharField(max_length=255, null=True, blank=True)
-    datestamp = models.DateTimeField(default=timezone.now)
+    datestamp = models.DateTimeField(default=datetime.datetime.now)
   
 
     def __str__(self):
@@ -79,10 +102,12 @@ class reports(models.Model):
     name = models.CharField(max_length=255, null=True, blank=True)
     description = models.CharField(max_length=255, null=True, blank=True)
     tree_items = models.CharField(max_length=512, null=True, blank=True)
+    html_name = models.CharField(max_length=512, null=True, blank=True)
+    model_name = models.CharField(max_length=512, null=True, blank=True)
     report_icon = models.CharField(max_length=255, null=True, blank=True)
     report_view = models.CharField(max_length=255, null=True, blank=True)
     report_image = models.CharField(max_length=255, null=True, blank=True)
-    datestamp = models.DateTimeField(default=timezone.now)
+    datestamp = models.DateTimeField(default=datetime.datetime.now)
   
 
 
@@ -107,8 +132,8 @@ class Document(models.Model):
     last_modified_by = models.CharField(max_length=255, null=True, blank=True)
     revision = models.CharField(max_length=50, null=True, blank=True)
     category = models.CharField(max_length=255, null=True, blank=True)
-    datestamp = models.DateTimeField(default=timezone.now)
-  
+    datestamp = models.DateTimeField(default=datetime.datetime.now)
+
 
     def __str__(self):
         return self.file_name or f"Document {self.pk}"
@@ -116,7 +141,7 @@ class Document(models.Model):
 
 class Classification(models.Model):
     document = models.ForeignKey(Document, on_delete=models.SET_NULL, null=True, blank=True)
-    datestamp = models.DateTimeField(default=timezone.now)
+    datestamp = models.DateTimeField(default=datetime.datetime.now)
   
 
     def __str__(self):
@@ -125,7 +150,7 @@ class Classification(models.Model):
 
 class ClassificationCategory(models.Model):
     classification = models.ForeignKey(Classification, on_delete=models.SET_NULL, null=True, blank=True)
-    datestamp = models.DateTimeField(default=timezone.now)
+    datestamp = models.DateTimeField(default=datetime.datetime.now)
   
     category = models.CharField(max_length=255, null=True, blank=True)
 
@@ -137,7 +162,7 @@ class ClassificationSkill(models.Model):
     classification = models.ForeignKey(Classification, on_delete=models.SET_NULL, null=True, blank=True)
     
     skill = models.CharField(max_length=255, null=True, blank=True)
-    datestamp = models.DateTimeField(default=timezone.now)
+    datestamp = models.DateTimeField(default=datetime.datetime.now)
   
     
     def __str__(self):
@@ -152,23 +177,8 @@ class ClassificationDetail(models.Model):
     frequency = models.IntegerField(null=True, blank=True)
     match_percentage = models.FloatField(null=True, blank=True)
     snippet = models.TextField(null=True, blank=True)
-    datestamp = models.DateTimeField(default=timezone.now)
+    datestamp = models.DateTimeField(default=datetime.datetime.now)
   
 
     def __str__(self):
         return f"{self.skill} ({self.match_percentage}%)" if self.skill else f"Detail {self.pk}"
-
-
-class Similarity(models.Model):
-    doc1 = models.ForeignKey(Document, on_delete=models.SET_NULL, null=True, blank=True, related_name='similarity_doc1')
-    doc2 = models.ForeignKey(Document, on_delete=models.SET_NULL, null=True, blank=True, related_name='similarity_doc2')
-    meta_sim = models.FloatField(null=True, blank=True)
-    text_sim = models.FloatField(null=True, blank=True)
-    image_sim = models.FloatField(null=True, blank=True)
-    semantic_sim = models.FloatField(null=True, blank=True)
-    overall_sim = models.FloatField(null=True, blank=True)
-    datestamp = models.DateTimeField(default=timezone.now)
-  
-
-    def __str__(self):
-        return f"Similarity {self.pk} - Doc {self.doc1_id} vs Doc {self.doc2_id}"

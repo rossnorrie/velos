@@ -11,12 +11,22 @@ def report_query_params(report):
       - report_name
       - report_description
       - report_icon
+      - model_name (if not None)
+      - html_name (if not None)
     All parameters are URL-encoded.
     """
     params = {}
-    if hasattr(report, 'tree_items') and report.tree_items:
+    if getattr(report, 'tree_items', None):
         params['tree_view'] = report.tree_items
-    params['report_name'] = report.name
-    params['report_description'] = report.description
-    params['report_icon'] = report.report_icon
+    if getattr(report, 'name', None):
+        params['report_name'] = report.name
+    if getattr(report, 'description', None):
+        params['report_description'] = report.description
+    if getattr(report, 'report_icon', None):
+        params['report_icon'] = report.report_icon
+    if getattr(report, 'model_name', None):
+        params['model_name'] = report.model_name
+    if getattr(report, 'html_name', None):
+        params['html_name'] = report.html_name
+
     return urlencode(params)

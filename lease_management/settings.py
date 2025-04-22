@@ -14,8 +14,20 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 # Load environment variables
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent.parent
+dotenv_path = BASE_DIR / '.env'
 
+if dotenv_path.exists():
+    with open(dotenv_path) as f:
+        for line in f:
+            if line.strip() and not line.startswith("#") and "=" in line:
+                key, value = line.strip().split("=", 1)
+                os.environ[key] = value  # Force override manually
+
+print(f"[DEBUG] FINAL DB_NAME:", os.environ.get("DB_NAME"))
+
+
+os.getenv('DB_NAME', 'velo_db_prod')
 
 
 
@@ -101,9 +113,9 @@ WSGI_APPLICATION = 'lease_management.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME', 'velo_db'),
-        'USER': os.getenv('DB_USER', 'dev'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'dev'),
+        'NAME': os.getenv('DB_NAME', 'velo_db_prod'),
+        'USER': os.getenv('DB_USER', 'root'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'root'),
         'HOST': os.getenv('DB_HOST', 'localhost'),  # Change this if using a remote DB
         'PORT': os.getenv('DB_PORT', '3306'),
     }
@@ -151,3 +163,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/accounts/login/'
+
+print(f"[DEBUG] Loaded DB: {os.getenv('DB_NAME')}")
+print(f"[DEBUG] Django Connected DB: {DATABASES['default']['NAME']}")
+print(f"[DEBUG] .env path: {BASE_DIR / '.env'}")

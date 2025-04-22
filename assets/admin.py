@@ -1,12 +1,10 @@
 from django.contrib import admin
-from .models import asset, documentz, lease, similarityz
+from .models import Document, Classification, ClassificationCategory, ClassificationSkill, ClassificationDetail, Similarity
 
-class AssetAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'purchase_date', 'lease_status', 'price')  # Customize fields shown in the list
-    search_fields = ('name', 'category')  # Enable search
-    list_filter = ('category', 'lease_status')  # Enable filtering
-    ordering = ('-purchase_date',)  # Default sorting
-
-# Register the model with the custom admin class
-admin.site.register(asset, AssetAdmin)
+admin.site.register(Document)
+admin.site.register(Classification)
+admin.site.register(ClassificationCategory)
+admin.site.register(ClassificationSkill)
+admin.site.register(ClassificationDetail)
+admin.site.register(Similarity)
 

@@ -116,7 +116,7 @@ async def main():
     graph_client = MSGraphClient(tenant_id, client_id, client_secret, baseline)
     
     # Connect to the database and create tables if required
-    manager = maria_db.db_connection(database="velo_db")
+    manager = maria_db.db_connection(database="velo_db_prod")
 
 
 

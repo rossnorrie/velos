@@ -34,20 +34,15 @@
       </a>
         <!-- Separator -->
   <div class="border-l h-5 border-gray-200 dark:border-gray-700 mx-2"></div>
-      <a href="javascript:void(0)" onclick="downloadCSV()" title="Export CSV" class="text-gray-600 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-300">
-        <i class="fas fa-file-csv text-xl"></i>
-      </a>
-      <a href="javascript:void(0)" onclick="downloadJSON()" title="Export JSON" class="text-gray-600 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-300">
-        <i class="fas fa-file-code text-xl"></i>
-      </a>
-      <a href="javascript:void(0)" onclick="exportTableToPDF()" title="Export PDF" class="text-gray-600 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-300">
-        <i class="fas fa-file-pdf text-xl"></i>
-      </a>
+  <!-- Action Buttons -->
+  {% for action, icon in action_icons.items %}
+  <a href="javascript:void(0)" onclick="{{ action }}()" title="{{ action|capfirst }}" class="text-gray-600 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-300">
+    <i class="fas {{ icon }} text-xl"></i>
+  </a>
+  {% endfor %}
         <!-- Separator -->
   <div class="border-l h-5 border-gray-200 dark:border-gray-700 mx-2"></div>
-      <a href="javascript:void(0)" onclick="printReport()" title="Print Report" class="text-gray-600 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-300">
-        <i class="fas fa-print text-xl"></i>
-      </a>
+
   
   </div>
 
@@ -64,12 +59,7 @@
 
 
 
-  <!-- Action Buttons -->
-  {% for action, icon in action_icons.items %}
-  <a href="javascript:void(0)" onclick="{{ action }}()" title="{{ action|capfirst }}" class="text-gray-600 dark:text-gray-200 hover:text-gray-500 dark:hover:text-gray-300">
-    <i class="fas {{ icon }} text-xl"></i>
-  </a>
-  {% endfor %}
+
 
   <!-- Separator -->
   <div class="border-l h-5 border-gray-200 dark:border-gray-700 mx-2"></div>
@@ -154,7 +144,6 @@
           </thead>
           <tbody>
             {% for group in groups %}
-              {# Render each top-level group (level=0, no parent_id) #}
               {% include "assets/grouping_row_ext.html" with group=group parent_id="" level=0 header_list=header_list %}
             {% endfor %}
           </tbody>  
