@@ -29,10 +29,11 @@
         <div class="rounded overflow-hidden shadow-lg flex flex-col bg-white dark:bg-gray-800">
           <div class="relative">
             <img class="w-full h-48 object-cover transition-transform duration-300 hover:scale-105"
-                 src="{{ report.report_image }}?auto=compress&amp;cs=tinysrgb&amp;dpr=1&amp;w=500"
-                 alt="{{ report.alt_text|default:report.name }}">
+            src="{{ report.report_image|add:'?auto=compress&cs=tinysrgb&dpr=1&w=500'|safe }}"
+            alt="{{ report.alt_text|default:report.name }}">
 
-            <div class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25"></div>
+
+                        <div class="hover:bg-transparent transition duration-300 absolute bottom-0 top-0 right-0 left-0 bg-gray-900 opacity-25"></div>
 
             {% if report.report_view %}
               <a href="{% url report.report_view %}?{{ report|report_query_params }}">

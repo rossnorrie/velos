@@ -4,7 +4,7 @@ from .models import asset, lease, documentz, similarityz, report_categories, rep
 from .serializers import AssetSerializer, LeaseSerializer
 import asyncio
 import configparser
-from ms_graph import ms_graph_toolkit 
+from ms_graph import ms_graph_toolkit  
 from ms_graph import iutils
 from ms_graph import maria_db
 from datetime import datetime
@@ -634,7 +634,31 @@ def get_valid_fields(model, prefix="", depth=3, visited=None):
             valid_fields.add(f"{prefix}{field.name}")
     return valid_fields
 
+##############################################################################################
+# Updated MSGraph Data Fetching Function
+def generic_report_msgraph_data(query_func, query_kwargs, group_by_properties):
+     client = ms_graph_toolkit.MSGraphClient(
+         tenant_id="42fd9015-de4d-4223-a368-baeacab48927",
+         client_id="2bc1c9b9-d0ad-4ff1-ac90-f5f54f942efb",
+         client_secret="o5B8Q~XnkYM_BFpZ3anY~5lzrSiVqqGW3P_60br1",
+         baseline="1"
+     )
+ 
+     data = query_func(client, **query_kwargs)
+ 
+     if not data:
+         raise ValueError('Invalid or no data returned from MS Graph.')
+ 
+     # Prepare grouping fields (each field is stripped of whitespace)
+     grouping_fields = [field.strip() for field in group_by_properties.split(",") if field.strip()]
+ 
+     grouped_data = recursive_grouping(data, grouping_fields)
+ 
+     enhanced_data = add_icon_and_colour(grouped_data)
+ 
+     return enhanced_data, grouping_fields
 
+    
 
 @login_required
 def generic_db(request, group_by_properties=None):
@@ -847,3 +871,4 @@ def add_icon_and_colour(grouped_data):
             add_icon_and_colour(group["sub_groups"])
     
     return grouped_data
+
