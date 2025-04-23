@@ -94,7 +94,7 @@ def asset_ms_graph_asset_list(request, group_by_properties=None, header_text=Non
         print("Validated grouping_fields:", grouping_fields)
 
     # Reconstruct cleaned group_by_properties string
-    cleaned_group_by_properties = ",".join(grouping_fields)
+    cleaned_group_by_properties = ",".join([str(g) for g in grouping_fields if g is not None])
 
     #if not grouping_fields:
     #    return render(request, 'assets/error_page.html', {
@@ -173,7 +173,7 @@ def asset_ms_graph_user_list_generic(request, group_by_properties=None, header_t
         grouping_fields = [field.strip() for field in group_by_properties.split(",")]
         print("Validated grouping_fields:", grouping_fields)
 
-    cleaned_group_by_properties = ",".join(grouping_fields)
+    cleaned_group_by_properties = ",".join([str(g) for g in grouping_fields if g is not None])
 
     # Initialize MSGraphClient
     client = ms_graph_toolkit.MSGraphClient(
@@ -290,7 +290,7 @@ def asset_ms_graph_asset_list(request, group_by_properties=None):
         print("Validated grouping_fields:", grouping_fields)
 
     # Reconstruct cleaned group_by_properties string
-    cleaned_group_by_properties = ",".join(grouping_fields)
+    cleaned_group_by_properties = ",".join([str(g) for g in grouping_fields if g is not None])
 
     #if not grouping_fields:
     #    return render(request, 'assets/error_page.html', {
